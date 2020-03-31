@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -57,9 +58,6 @@ func main() {
 		}
 	}
 
-	//pods, _ := clientset.CoreV1().Pods(*namespace).List(v1.ListOptions{})
-	//fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
-
 	podMetrics, err := getPodMetrics(*namespace)
 
 	if err != nil {
@@ -71,12 +69,39 @@ func main() {
 
 		for key := range podMetrics.Items[k].Containers {
 			log.Println("Container", containerName, "is using", podMetrics.Items[k].Containers[key].Usage.CPU, "CPU and", podMetrics.Items[k].Containers[key].Usage.Memory, "memory")
+			parseCPUReading(podMetrics.Items[k].Containers[key].Usage.CPU)
 		}
 	}
-	deploymentInfo, err = getDeploymentInfo(*namespace, *deploymentName)
+
+	deploymentInfo, err := getDeploymentInfo(*namespace, *deploymentName)
 
 	if err != nil {
 		log.Println("Error gathering deployment metrics", err.Error())
 	}
+
+	for k := range deploymentInfo.Spec.Template.Spec.Containers {
+		log.Println(deploymentInfo.Spec.Template.Spec.Containers[k])
+	}
+}
+
+func parseCPUReading(cpu string) (int, string, error) {
+	unit := string(cpu[len(cpu)-1])
+	cpuStr := cpu[0 : len(cpu)-1]
+	cpuInt, err := strconv.Atoi(cpuStr)
+
+	if err != nil {
+		log.Println("Unable to convert", cpuStr, "to int")
+		log.Println(err.Error())
+		return 0, "", err
+	}
+
+	return cpuInt, unit, nil
+}
+
+func convertNanoToMilli() {
+	// int / 1000000
+}
+
+func convertKibiToMibi() {
 
 }
