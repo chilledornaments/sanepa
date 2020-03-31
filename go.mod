@@ -29,6 +29,7 @@ require (
 	k8s.io/client-go v0.15.7
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20200121204235-bf4fb3bd569c // indirect
+	k8s.io/metrics v0.15.7
 	k8s.io/utils v0.0.0-20200327001022-6496210b90e8 // indirect
 	sigs.k8s.io/structured-merge-diff/v3 v3.0.0 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
