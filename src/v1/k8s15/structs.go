@@ -1,6 +1,6 @@
 package main
 
-type metricsStruct struct {
+type podMetricsStruct struct {
 	Kind       string `json:"kind"`
 	APIVersion string `json:"apiVersion"`
 	Metadata   struct {
@@ -13,7 +13,7 @@ type metricsStruct struct {
 		} `json:"metadata"`
 		Window     string `json:"window"`
 		Containers []struct {
-			Name  string `json:"string"`
+			Name  string `json:"name"`
 			Usage struct {
 				CPU    string `json:"cpu"`
 				Memory string `json:"memory"`

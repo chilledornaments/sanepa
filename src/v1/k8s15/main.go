@@ -60,16 +60,24 @@ func main() {
 	//pods, _ := clientset.CoreV1().Pods(*namespace).List(v1.ListOptions{})
 	//fmt.Printf("There are %d pods in the cluster\n", len(pods.Items))
 
-	err = getPodMetrics(*namespace)
+	podMetrics, err := getPodMetrics(*namespace)
 
 	if err != nil {
-		panic(err)
+		log.Println("Error gathering pod metrics", err.Error())
 	}
 
-	err = getDeploymentMetrics(*namespace, *deploymentName)
+	for k := range podMetrics.Items {
+		containerName := podMetrics.Items[k].Metadata.Name
+
+		for key := range podMetrics.Items[k].Containers {
+			log.Println("Container", containerName, "is using", podMetrics.Items[k].Containers[key].Usage.CPU, "CPU and", podMetrics.Items[k].Containers[key].Usage.Memory, "memory")
+		}
+	}
+	deploymentInfo, err = getDeploymentInfo(*namespace, *deploymentName)
 
 	if err != nil {
-		panic(err)
+		log.Println("Error gathering deployment metrics", err.Error())
+
 	}
 
 }

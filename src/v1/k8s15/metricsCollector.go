@@ -3,10 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 )
 
-func getPodMetrics(namespace string) error {
+func getPodMetrics(namespace string) (*podMetricsStruct, error) {
 
 	var url string
 
@@ -16,23 +15,22 @@ func getPodMetrics(namespace string) error {
 		url = fmt.Sprintf("apis/metrics.k8s.io/v1beta1/namespaces/%s/pods", namespace)
 	}
 
-	podMetrics := &metricsStruct{}
+	podMetrics := &podMetricsStruct{}
 
 	data, err := clientset.RESTClient().Get().AbsPath(url).DoRaw()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = json.Unmarshal(data, &podMetrics)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	log.Println(podMetrics)
-	return nil
+	return podMetrics, nil
 }
 
-func getDeploymentMetrics(namespace string, deploymentName string) error {
+func getDeploymentInfo(namespace string, deploymentName string) (*deploymentStruct, error) {
 	var url string
 
 	if namespace == "" {
@@ -45,14 +43,13 @@ func getDeploymentMetrics(namespace string, deploymentName string) error {
 
 	data, err := clientset.RESTClient().Get().AbsPath(url).DoRaw()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	err = json.Unmarshal(data, &deploymentMetrics)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	log.Println(deploymentMetrics)
-	return nil
+	return deploymentMetrics, nil
 }
