@@ -116,10 +116,10 @@ func main() {
 					}
 					log.Println("Container", containerName, "is using", memInMibi, "Mib memory and", cpuConverted, friendlyUnit)
 
-					if memInMibi > deploymentMemoryLimit {
+					if memInMibi > deploymentMemoryThreshold {
 						log.Println("ISSUE: Container", containerName, "is over the memory limit. Adding another replica")
 					}
-					if cpuConverted > deploymentCPULimit {
+					if cpuConverted > deploymentCPUThreshold {
 						log.Println("ISSUE: Container", containerName, "is over the CPU limit. Adding another replica")
 					}
 				}
