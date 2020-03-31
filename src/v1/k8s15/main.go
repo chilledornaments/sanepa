@@ -77,7 +77,6 @@ func main() {
 
 	if err != nil {
 		log.Println("Error gathering deployment metrics", err.Error())
-
 	}
 
 }
