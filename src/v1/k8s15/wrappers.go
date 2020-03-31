@@ -91,3 +91,7 @@ func convertMemoryToMibiWrapper(memoryUsage int, memoryType string) int {
 	// This should never return
 	return memoryUsage
 }
+
+func generateThreshold(limit int, threshold int) int {
+	return limit * threshold / 100
+}
