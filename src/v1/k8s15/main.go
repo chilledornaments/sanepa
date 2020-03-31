@@ -71,15 +71,23 @@ func main() {
 		containerName := podMetrics.Items[k].Metadata.Name
 
 		for key := range podMetrics.Items[k].Containers {
-			//log.Println("Container", containerName, "is using", podMetrics.Items[k].Containers[key].Usage.CPU, "CPU and", podMetrics.Items[k].Containers[key].Usage.Memory, "memory")
+			// Convert CPU readings
 			cpuInt, cpuUnit, err := parseCPUReading(podMetrics.Items[k].Containers[key].Usage.CPU)
 			cpuConverted, friendlyUnit := convertCPUWrapper(cpuInt, cpuUnit)
 
 			if err != nil {
 				log.Println("Received error parsing CPU")
-			} else {
-				log.Println("Container", containerName, "is using", cpuConverted, friendlyUnit)
 			}
+			// Convert memory readings
+			memoryInt, memoryUnit, err := parseMemoryReading(podMetrics.Items[k].Containers[key].Usage.Memory)
+
+			memInMibi := convertMemoryToMibiWrapper(memoryInt, memoryUnit)
+
+			if err != nil {
+				log.Println("Received error parsing memory")
+			}
+			log.Println("Container", containerName, "is using", memInMibi, "Mib memory and", cpuConverted, friendlyUnit, "CPU")
+
 		}
 	}
 
@@ -91,7 +99,6 @@ func main() {
 
 	for k := range deploymentInfo.Spec.Template.Spec.Containers {
 		log.Println("CPU limit is", parseCPULimit(deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.CPU), "milliCPU")
-		//log.Println("CPU limit is", deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.CPU)
-		//log.Println("Memory limit is", deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.Memory)
+		log.Println("Memory limit is", parseMemoryLimit(deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.Memory), "Mibibytes")
 	}
 }

@@ -6,6 +6,7 @@ import (
 )
 
 func parseCPUReading(cpu string) (int, string, error) {
+	// We want the last item in the string
 	unit := string(cpu[len(cpu)-1])
 	cpuStr := cpu[0 : len(cpu)-1]
 	cpuInt, err := strconv.Atoi(cpuStr)
@@ -45,11 +46,48 @@ func parseCPULimit(cpuLimit string) int {
 
 	return wrappedCPULimit
 }
+
 func convertNanoToMilli(cpuUsage int) int {
-	converted := cpuUsage / 1000000
-	return converted
+	return cpuUsage / 1000000
 }
 
-func convertKibiToMibi() {
+func parseMemoryReading(memory string) (int, string, error) {
+	// Second from last item in the string should be e.g. K/M/G
+	unit := string(memory[len(memory)-2])
+	memoryStr := memory[0 : len(memory)-2]
+	memoryInt, err := strconv.Atoi(memoryStr)
+	if err != nil {
+		log.Println("Unable to convert", memoryStr, "to int")
+		log.Println(err.Error())
+		return 0, "", err
+	}
 
+	return memoryInt, unit, nil
+}
+
+func parseMemoryLimit(memoryLimit string) int {
+	limit, unit, err := parseMemoryReading(memoryLimit)
+
+	if err != nil {
+		log.Println("Error parsing memory limit")
+		// Placeholder, we shouldn't return 0 because we will always scale
+		// We shouldn't return 1000 cause then we'll probably never scale
+		return 1000
+	}
+
+	return convertMemoryToMibiWrapper(limit, unit)
+
+}
+
+func convertMemoryToMibiWrapper(memoryUsage int, memoryType string) int {
+	switch memoryType {
+	case "K":
+		return memoryUsage / 1024
+	case "M":
+		return memoryUsage
+	case "G":
+		return memoryUsage * 1024
+	}
+	// This should never return
+	return memoryUsage
 }
