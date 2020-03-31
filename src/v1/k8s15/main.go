@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -17,28 +16,6 @@ var (
 	config    *rest.Config
 	err       error
 )
-
-type metricsStruct struct {
-	Kind       string `json:"kind"`
-	APIVersion string `json:"apiVersion"`
-	Metadata   struct {
-		SelfLink string `json:"selfLink"`
-	} `json:"metadata"`
-	Items []struct {
-		Metadata struct {
-			Name      string `json:"name"`
-			Namespace string `json:"namespace"`
-		} `json:"metadata"`
-		Window     string `json:"window"`
-		Containers []struct {
-			Name  string `json:"string"`
-			Usage struct {
-				CPU    string `json:"cpu"`
-				Memory string `json:"memory"`
-			} `json:"usage"`
-		} `json:"containers"`
-	} `json:"items"`
-}
 
 func authOutCluster() error {
 	if os.Getenv("KUBECONFIG") == "" {
@@ -64,6 +41,7 @@ func main() {
 
 	var inCluster = flag.Bool("incluster", true, "-incluster=false to run outside of a k8s cluster")
 	var namespace = flag.String("ns", "", "-ns=default")
+	var deploymentName = flag.String("dep", "", "-dep=deployment-name")
 
 	flag.Parse()
 
@@ -88,30 +66,10 @@ func main() {
 		panic(err)
 	}
 
-}
-
-func getPodMetrics(namespace string) error {
-
-	var podURL string
-
-	if namespace == "" {
-		podURL = "apis/metrics.k8s.io/v1beta1/pods"
-	} else {
-		podURL = fmt.Sprintf("apis/metrics.k8s.io/v1beta1/namespaces/%s/pods", namespace)
-	}
-
-	pods := &metricsStruct{}
-
-	data, err := clientset.RESTClient().Get().AbsPath(podURL).DoRaw()
-	if err != nil {
-		return err
-	}
-	err = json.Unmarshal(data, &pods)
+	err = getDeploymentMetrics(*namespace, *deploymentName)
 
 	if err != nil {
-		return err
+		panic(err)
 	}
 
-	log.Println(pods)
-	return nil
 }

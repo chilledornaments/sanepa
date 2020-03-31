@@ -21,3 +21,38 @@ type metricsStruct struct {
 		} `json:"containers"`
 	} `json:"items"`
 }
+
+type deploymentStruct struct {
+	Kind       string `json:"kind"`
+	APIVersion string `json:"apiVersion"`
+	Metadata   struct {
+		Name      string `json:"name"`
+		Namespace string `json:"namespace"`
+		SelfLink  string `json:"selfLink"`
+		/*
+			Annotations struct {
+
+			} `json:"annotations"`
+		*/
+	} `json:"metadata"`
+	Spec struct {
+		Replicas int `json:"replicas"`
+		Template struct {
+			Spec struct {
+				Containers []struct {
+					Name      string `json:"name"`
+					Resources struct {
+						Limits struct {
+							CPU    string `json:"cpu"`
+							Memory string `json:"memory"`
+						} `json:"limits"`
+						Requests struct {
+							CPU    string `json:"cpu"`
+							Memory string `json:"memory"`
+						} `json:"requests"`
+					} `json:"resources"`
+				} `json:"containers"`
+			} `json:"spec"`
+		} `json:"template"`
+	} `json:"spec"`
+}
