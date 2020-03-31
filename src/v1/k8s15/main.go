@@ -18,6 +18,10 @@ var (
 	err       error
 )
 
+const (
+	alphabet = "abcdefghijklmnopqrstuvwxyz"
+)
+
 func authOutCluster() error {
 	if os.Getenv("KUBECONFIG") == "" {
 		return fmt.Errorf("KUBECONFIG not set in env")
@@ -68,8 +72,15 @@ func main() {
 		containerName := podMetrics.Items[k].Metadata.Name
 
 		for key := range podMetrics.Items[k].Containers {
-			log.Println("Container", containerName, "is using", podMetrics.Items[k].Containers[key].Usage.CPU, "CPU and", podMetrics.Items[k].Containers[key].Usage.Memory, "memory")
-			parseCPUReading(podMetrics.Items[k].Containers[key].Usage.CPU)
+			//log.Println("Container", containerName, "is using", podMetrics.Items[k].Containers[key].Usage.CPU, "CPU and", podMetrics.Items[k].Containers[key].Usage.Memory, "memory")
+			cpuInt, cpuUnit, err := parseCPUReading(podMetrics.Items[k].Containers[key].Usage.CPU)
+			cpuConverted, friendlyUnit := convertCPUWrapper(cpuInt, cpuUnit)
+
+			if err != nil {
+				log.Println("Received error parsing CPU")
+			} else {
+				log.Println("Container", containerName, "is using", cpuConverted, friendlyUnit)
+			}
 		}
 	}
 
@@ -80,7 +91,9 @@ func main() {
 	}
 
 	for k := range deploymentInfo.Spec.Template.Spec.Containers {
-		log.Println(deploymentInfo.Spec.Template.Spec.Containers[k])
+		log.Println("CPU limit is", parseCPULimit(deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.CPU), "milliCPU")
+		//log.Println("CPU limit is", deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.CPU)
+		//log.Println("Memory limit is", deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.Memory)
 	}
 }
 
@@ -98,8 +111,35 @@ func parseCPUReading(cpu string) (int, string, error) {
 	return cpuInt, unit, nil
 }
 
-func convertNanoToMilli() {
-	// int / 1000000
+func convertCPUWrapper(cpuUsage int, cpuUnit string) (int, string) {
+	switch cpuUnit {
+	case "n":
+		return convertNanoToMilli(cpuUsage), "milliCPU"
+	case "m":
+		return cpuUsage, "milliCPU"
+	}
+
+	// This should never get called
+	return cpuUsage, "milliCPU"
+}
+
+func parseCPULimit(cpuLimit string) int {
+	var wrappedCPULimit int
+	wrappedCPULimit, err = strconv.Atoi(cpuLimit)
+
+	if err != nil {
+		log.Println("Error converting", cpuLimit, "to int. Assuming CPU limit specifies millicpu")
+		cpuStr := cpuLimit[0 : len(cpuLimit)-1]
+		wrappedCPULimit, err = strconv.Atoi(cpuStr)
+	} else {
+		wrappedCPULimit = wrappedCPULimit * 1000
+	}
+
+	return wrappedCPULimit
+}
+func convertNanoToMilli(cpuUsage int) int {
+	converted := cpuUsage / 1000000
+	return converted
 }
 
 func convertKibiToMibi() {
