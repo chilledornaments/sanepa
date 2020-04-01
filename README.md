@@ -2,15 +2,13 @@
 
 The sane Kubernetes HPA
 
-## Dependencies
-
-Go Client: `go get k8s.io/client-go@v0.15.7`
-
-K8s API Machinery: `go get k8s.io/apimachinery@v0.15.7`
+`sanepa` checks pod resource usage against `deployment.spec.template.spec.containers.resources.limits` values and will scale up and down when a pod is above a set threshold.
 
 ## Running
 
 ### Notes
+
+`sanepa` runs its checks every ten seconds. You should take that into consideration when setting `-cooldown` and `-scaledownok` arg values.
 
 ## Flags
 
@@ -28,6 +26,6 @@ K8s API Machinery: `go get k8s.io/apimachinery@v0.15.7`
 
 `-min`: The minimum number of replicas in the deployment. Defaults to 1.
 
-`-cooldown`: How much time should pass after a scale up event before checking again.
+`-cooldown`: How much time should pass after a scale up event before checking again. If your application takes 90 seconds to start, you should set this to at least 90.
 
-`-scaledownok`: How many times must all pods be under thresholds before scaling down?
+`-scaledownok`: How many times must all pods be under thresholds before scaling down.

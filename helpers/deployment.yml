@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: sanepa
+  namespace: default
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: sanepa
+    spec:
+      serviceAccountName: sanepa-service-account
+      containers:
+        - name: sanepa
+          image: mitchya1/sanepa:v1-k8s1.15.7
+          args:
+            - "-incluster=true"
+            - "-ns=test"
+            - "-dep=example-deployment"
+            - "-cpu=50"
+            - "-mem=60"
+            - "-min=2"
+            - "-max=4"
+            - "-cooldown=100"
+            - "-scaledownok=5"
+          resources:
+              limits:
+                memory: "150Mi"
+                cpu: "150m"
+              requests:
+                memory: "100Mi"
+                cpu: "100m"
