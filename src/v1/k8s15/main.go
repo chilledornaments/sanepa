@@ -171,7 +171,7 @@ func monitorAndScale() {
 						logWarning(fmt.Sprintf("Container %s is over the CPU limit. Adding another replica", containerName))
 						shouldScale = true
 					} else {
-						logInfo("Pods are below thresholds")
+						logInfo("Containers are below thresholds")
 						shouldScale = false
 					}
 					if shouldScale {
