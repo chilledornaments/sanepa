@@ -21,6 +21,12 @@ var (
 	deploymentMemoryThreshold int
 	containerNameToMatch      string
 	shouldScale               bool
+	scaleStatus               string
+	namespace                 *string
+	deploymentName            *string
+	inCluster                 *bool
+	cpuThreshold              *int
+	memThreshold              *int
 )
 
 const (
@@ -49,37 +55,44 @@ func authOutCluster() error {
 
 func main() {
 
-	var inCluster = flag.Bool("incluster", true, "-incluster=false to run outside of a k8s cluster")
-	var namespace = flag.String("ns", "", "Namespace to search in. Example: -ns=default")
-	var deploymentName = flag.String("dep", "", "Deployment name to watch. Example: -dep=deployment-name")
-	var cpuThreshold = flag.Int("cpu", 50, "At what percentage of CPU limit should we scale? Example: -cpu=40")
-	var memThreshold = flag.Int("mem", 70, "At what percentage of memory limit should we scale? Example: -mem=30")
+	inCluster = flag.Bool("incluster", true, "-incluster=false to run outside of a k8s cluster")
+	namespace = flag.String("ns", "", "Namespace to search in. Example: -ns=default")
+	deploymentName = flag.String("dep", "", "Deployment name to watch. Example: -dep=deployment-name")
+	cpuThreshold = flag.Int("cpu", 50, "At what percentage of CPU limit should we scale? Example: -cpu=40")
+	memThreshold = flag.Int("mem", 70, "At what percentage of memory limit should we scale? Example: -mem=30")
 
 	flag.Parse()
 
-	log.Println("Starting SanePA")
+	logInfo("Starting SanePA")
 
 	if *inCluster {
-		log.Println("Running in cluster")
+		logInfo("Running in cluster")
 	} else {
-		log.Println("Running outside of cluster")
+		logInfo("Running outside of cluster")
 		err = authOutCluster()
 		if err != nil {
-			log.Println("Error authenticating", err.Error())
+			logError("Error authenticating", err)
 			os.Exit(1)
 		}
 	}
 
+	monitorAndScale()
+
+}
+
+func monitorAndScale() {
+	//watcher := time.NewTicker(10 * time.Second)
+
 	podMetrics, err := getPodMetrics(*namespace)
 
 	if err != nil {
-		log.Println("Error gathering pod metrics", err.Error())
+		logError("Error gathering pod metrics", err)
 	}
 
 	deploymentInfo, err := getDeploymentInfo(*namespace, *deploymentName)
 
 	if err != nil {
-		log.Println("Error gathering deployment metrics", err.Error())
+		logError("Error gathering deployment metrics", err)
 	}
 
 	for k := range deploymentInfo.Spec.Template.Spec.Containers {
@@ -88,10 +101,10 @@ func main() {
 		deploymentMemoryLimit = parseMemoryLimit(deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.Memory)
 		deploymentMemoryThreshold = generateThreshold(deploymentMemoryLimit, *memThreshold)
 		containerNameToMatch = deploymentInfo.Spec.Template.Spec.Containers[k].Name
-		log.Println("CPU limit is", deploymentCPULimit, "milliCPU for deployment:", deploymentInfo.Spec.Template.Spec.Containers[k].Name)
-		log.Println("Scaling CPU threshold is", deploymentCPUThreshold)
-		log.Println("Memory limit is", deploymentMemoryLimit, "Mibibytes for deployment:", deploymentInfo.Spec.Template.Spec.Containers[k].Name)
-		log.Println("Scaling memory threshold is", deploymentMemoryThreshold)
+		logInfo(fmt.Sprintf("CPU limit is %d milliCPU for deployment: %s", deploymentCPULimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
+		logInfo(fmt.Sprintf("Scaling CPU threshold is %d", deploymentCPUThreshold))
+		logInfo(fmt.Sprintf("Memory limit is %d Mibibytes for deployment: %s", deploymentMemoryLimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
+		logInfo(fmt.Sprintf("Scaling memory threshold is %d", deploymentMemoryThreshold))
 
 		for k := range podMetrics.Items {
 			containerName := podMetrics.Items[k].Metadata.Name
@@ -102,11 +115,11 @@ func main() {
 				cpuConverted, friendlyUnit := convertCPUWrapper(cpuInt, cpuUnit)
 
 				if podMetrics.Items[k].Containers[key].Name != containerNameToMatch {
-					log.Println("Skipping", podMetrics.Items[k].Containers[key].Name, "as it is not a member of the deployment", *deploymentName)
+					logInfo(fmt.Sprintf("Skipping %s as it is not a member of the deployment %s", podMetrics.Items[k].Containers[key].Name, string(*deploymentName)))
 				} else {
 
 					if err != nil {
-						log.Println("Received error parsing CPU")
+						logInfo("Received error parsing CPU")
 					}
 					// Convert memory readings
 					memoryInt, memoryUnit, err := parseMemoryReading(podMetrics.Items[k].Containers[key].Usage.Memory)
@@ -114,19 +127,19 @@ func main() {
 					memInMibi := convertMemoryToMibiWrapper(memoryInt, memoryUnit)
 
 					if err != nil {
-						log.Println("Received error parsing memory")
+						logError("Received error parsing memory", err)
 					}
 					log.Println("Container", containerName, "is using", memInMibi, "Mib memory and", cpuConverted, friendlyUnit)
 
 					if memInMibi > deploymentMemoryThreshold {
-						log.Println("ISSUE: Container", containerName, "is over the memory limit. Adding another replica")
-						scaleUpDeployment(*namespace, *deploymentName)
+						logWarning(fmt.Sprintf("Container %s is over the memory limit. Adding another replica", containerName))
+						//scaleUpDeployment(*namespace, *deploymentName)
 						shouldScale = true
 					}
 					if cpuConverted > deploymentCPUThreshold {
-						log.Println("ISSUE: Container", containerName, "is over the CPU limit. Adding another replica")
-						scaleUpDeployment(*namespace, *deploymentName)
-						shouldScale = false
+						logWarning(fmt.Sprintf("Container %s is over the CPU limit. Adding another replica", containerName))
+						//scaleUpDeployment(*namespace, *deploymentName)
+						shouldScale = true
 					}
 				}
 			}

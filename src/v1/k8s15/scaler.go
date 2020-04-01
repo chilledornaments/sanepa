@@ -4,13 +4,9 @@ import (
 	"log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//scale "k8s.io/client-go/scale"
 )
 
-func scaleUpDeployment(namespace string, deploymentName string) {
-
-	//var sg scale.ScalesGetter
-	//scaleInterface := sg.Scales(namespace)
+func scaleUpDeployment(namespace string, deploymentName string) error {
 
 	deploymentsClient := clientset.AppsV1().Deployments(namespace)
 
@@ -26,11 +22,15 @@ func scaleUpDeployment(namespace string, deploymentName string) {
 
 	d.Spec.Replicas = newReplicas
 
-	scaleResult, err := deploymentsClient.UpdateScale(deploymentName, d)
+	_, err = deploymentsClient.UpdateScale(deploymentName, d)
 
 	if err != nil {
-		panic(err)
+		log.Println("Received error when attempting to scale to", newReplicas, "replicas")
+		log.Println(err.Error())
+		return err
 	}
 
-	log.Println(scaleResult)
+	log.Println("Successfully scaled", deploymentName, "to", newReplicas, "replicas")
+	return nil
+
 }
