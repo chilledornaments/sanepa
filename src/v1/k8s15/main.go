@@ -29,7 +29,12 @@ var (
 	cpuThreshold              *int
 	memThreshold              *int
 	deploymentMaxReplicas     *int
+	deploymentMinReplicas     *int
 	cooldownInSeconds         *int
+	scaleDownOkCount          int
+	shouldScaleDown           bool
+	scaleDownOkPeriods        *int
+	hasScaled                 bool
 )
 
 const (
@@ -75,6 +80,8 @@ func authInCluster() error {
 func main() {
 
 	shouldScaleUp = false
+	scaleDownOkCount = 0
+	hasScaled = false
 
 	inCluster = flag.Bool("incluster", true, "-incluster=false to run outside of a k8s cluster")
 	namespace = flag.String("ns", "", "Namespace to search in. Example: -ns=default")
@@ -82,8 +89,9 @@ func main() {
 	cpuThreshold = flag.Int("cpu", 50, "At what percentage of CPU limit should we scale? Example: -cpu=40")
 	memThreshold = flag.Int("mem", 70, "At what percentage of memory limit should we scale? Example: -mem=30")
 	deploymentMaxReplicas = flag.Int("max", 5, "The maximum number of replicas the deployment can have. Example: -max=5")
-	cooldownInSeconds = flag.Int("cooldown", 30, "Number of seconds to wait after scaling. If your application takes 120 seconds to become ready, set this to 120. Example: -cooldown=10")
-
+	deploymentMinReplicas = flag.Int("min", 1, "The minimum number of replicas in the deployment. Example: -min=2")
+	cooldownInSeconds = flag.Int("cooldown", 30, "The number of seconds to wait after scaling. If your application takes 120 seconds to become ready, set this to 120. Example: -cooldown=10")
+	scaleDownOkPeriods = flag.Int("scaledownok", 3, "For how many consecutive periods of time must the containers be under threshold until we scale down? Example: -scaledownok=3")
 	flag.Parse()
 
 	logInfo("Starting SanePA")
@@ -172,14 +180,27 @@ func monitorAndScale() {
 						shouldScaleUp = true
 					} else {
 						logInfo("Containers are below thresholds")
+						scaleDownOkCount++
+						if scaleDownOkCount >= *scaleDownOkPeriods && hasScaled {
+							logInfo("Attempting to scale down by one replica")
+							err = scaleDownDeployment(*namespace, *deploymentName)
+							if err == errScalingLimitReached {
+								hasScaled = false
+							}
+							time.Sleep(30 * time.Second)
+						}
 						shouldScaleUp = false
 					}
 					if shouldScaleUp {
 						logInfo("Scaling started")
-						scaleUpDeployment(*namespace, *deploymentName)
+						err = scaleUpDeployment(*namespace, *deploymentName)
+						if err != nil {
+							hasScaled = false
+						}
 						logInfo(fmt.Sprintf("Waiting %d seconds for cooldown", *cooldownInSeconds))
 						time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
 						shouldScaleUp = false
+						hasScaled = true
 					}
 
 				}
