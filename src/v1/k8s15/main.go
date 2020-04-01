@@ -138,8 +138,8 @@ func monitorAndScale() {
 
 	logInfo(fmt.Sprintf("Minimum replicas is %d", *deploymentMinReplicas))
 	logInfo(fmt.Sprintf("Maximum replicas is %d", *deploymentMaxReplicas))
-	logInfo(fmt.Sprintf("Cooldown is %d", *cooldownInSeconds))
-	logInfo(fmt.Sprintf("Scale down ok periods is %d", *scaleDownOkPeriods))
+	logInfo(fmt.Sprintf("Cooldown period is %d seconds", *cooldownInSeconds))
+	logInfo(fmt.Sprintf("Scale down ok periods is %d seconds", *scaleDownOkPeriods))
 
 	for k := range deploymentInfo.Spec.Template.Spec.Containers {
 		deploymentCPULimit = parseCPULimit(deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.CPU)
@@ -147,9 +147,9 @@ func monitorAndScale() {
 		deploymentMemoryLimit = parseMemoryLimit(deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.Memory)
 		deploymentMemoryThreshold = generateThreshold(deploymentMemoryLimit, *memThreshold)
 		containerNameToMatch = deploymentInfo.Spec.Template.Spec.Containers[k].Name
-		logInfo(fmt.Sprintf("CPU limit is %d milliCPU for deployment: %s", deploymentCPULimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
+		logInfo(fmt.Sprintf("CPU limit is %d percent for deployment: %s", deploymentCPULimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
 		logInfo(fmt.Sprintf("Scaling CPU threshold is %d milliCPU", deploymentCPUThreshold))
-		logInfo(fmt.Sprintf("Memory limit is %d Mibibytes for deployment: %s", deploymentMemoryLimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
+		logInfo(fmt.Sprintf("Memory limit is %d Mibibytes for deployment: %s percent", deploymentMemoryLimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
 		logInfo(fmt.Sprintf("Scaling memory threshold is %d mibibytes", deploymentMemoryThreshold))
 
 		for k := range podMetrics.Items {
