@@ -20,6 +20,7 @@ var (
 	deploymentMemoryLimit     int
 	deploymentMemoryThreshold int
 	containerNameToMatch      string
+	shouldScale               bool
 )
 
 const (
@@ -65,6 +66,7 @@ func main() {
 		err = authOutCluster()
 		if err != nil {
 			log.Println("Error authenticating", err.Error())
+			os.Exit(1)
 		}
 	}
 
@@ -118,9 +120,13 @@ func main() {
 
 					if memInMibi > deploymentMemoryThreshold {
 						log.Println("ISSUE: Container", containerName, "is over the memory limit. Adding another replica")
+						scaleUpDeployment(*namespace, *deploymentName)
+						shouldScale = true
 					}
 					if cpuConverted > deploymentCPUThreshold {
 						log.Println("ISSUE: Container", containerName, "is over the CPU limit. Adding another replica")
+						scaleUpDeployment(*namespace, *deploymentName)
+						shouldScale = false
 					}
 				}
 			}
