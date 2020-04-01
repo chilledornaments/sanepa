@@ -6,6 +6,8 @@ The sane Kubernetes HPA
 
 ## Running
 
+You can find kubernetes examples in `examples/k8s/`
+
 ### Notes
 
 `sanepa` runs its checks every ten seconds. You should take that into consideration when setting `-cooldown` and `-scaledownok` arg values.
