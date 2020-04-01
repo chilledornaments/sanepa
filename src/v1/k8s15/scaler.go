@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -18,6 +18,11 @@ func scaleUpDeployment(namespace string, deploymentName string) error {
 		panic(err)
 	}
 
+	if int(d.Spec.Replicas) >= *deploymentMaxReplicas {
+		logWarning("Scaling limit reached")
+		return errScalingLimitReached
+	}
+
 	newReplicas := d.Spec.Replicas + 1
 
 	d.Spec.Replicas = newReplicas
@@ -25,12 +30,11 @@ func scaleUpDeployment(namespace string, deploymentName string) error {
 	_, err = deploymentsClient.UpdateScale(deploymentName, d)
 
 	if err != nil {
-		log.Println("Received error when attempting to scale to", newReplicas, "replicas")
-		log.Println(err.Error())
+		logError(fmt.Sprintf("Received error when attempting to scale to %d replicas", newReplicas), err)
 		return err
 	}
 
-	log.Println("Successfully scaled", deploymentName, "to", newReplicas, "replicas")
+	logInfo(fmt.Sprintf("Successfully scaled %s to %d replicas", deploymentName, newReplicas))
 	return nil
 
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -27,6 +28,8 @@ var (
 	inCluster                 *bool
 	cpuThreshold              *int
 	memThreshold              *int
+	deploymentMaxReplicas     *int
+	cooldownInSeconds         *int
 )
 
 const (
@@ -55,11 +58,15 @@ func authOutCluster() error {
 
 func main() {
 
+	shouldScale = false
+
 	inCluster = flag.Bool("incluster", true, "-incluster=false to run outside of a k8s cluster")
 	namespace = flag.String("ns", "", "Namespace to search in. Example: -ns=default")
 	deploymentName = flag.String("dep", "", "Deployment name to watch. Example: -dep=deployment-name")
 	cpuThreshold = flag.Int("cpu", 50, "At what percentage of CPU limit should we scale? Example: -cpu=40")
 	memThreshold = flag.Int("mem", 70, "At what percentage of memory limit should we scale? Example: -mem=30")
+	deploymentMaxReplicas = flag.Int("max", 5, "The maximum number of replicas the deployment can have. Example: -max=5")
+	cooldownInSeconds = flag.Int("cooldown", 30, "Number of seconds to wait after scaling. If your application takes 120 seconds to become ready, set this to 120. Example: -cooldown=10")
 
 	flag.Parse()
 
@@ -76,12 +83,17 @@ func main() {
 		}
 	}
 
-	monitorAndScale()
+	watcher := time.Tick(10 * time.Second)
+
+	for range watcher {
+		monitorAndScale()
+	}
 
 }
 
 func monitorAndScale() {
-	//watcher := time.NewTicker(10 * time.Second)
+
+	fmt.Println("********************************************************")
 
 	podMetrics, err := getPodMetrics(*namespace)
 
@@ -102,9 +114,9 @@ func monitorAndScale() {
 		deploymentMemoryThreshold = generateThreshold(deploymentMemoryLimit, *memThreshold)
 		containerNameToMatch = deploymentInfo.Spec.Template.Spec.Containers[k].Name
 		logInfo(fmt.Sprintf("CPU limit is %d milliCPU for deployment: %s", deploymentCPULimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
-		logInfo(fmt.Sprintf("Scaling CPU threshold is %d", deploymentCPUThreshold))
+		logInfo(fmt.Sprintf("Scaling CPU threshold is %d milliCPU", deploymentCPUThreshold))
 		logInfo(fmt.Sprintf("Memory limit is %d Mibibytes for deployment: %s", deploymentMemoryLimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
-		logInfo(fmt.Sprintf("Scaling memory threshold is %d", deploymentMemoryThreshold))
+		logInfo(fmt.Sprintf("Scaling memory threshold is %d mibibytes", deploymentMemoryThreshold))
 
 		for k := range podMetrics.Items {
 			containerName := podMetrics.Items[k].Metadata.Name
@@ -129,18 +141,26 @@ func monitorAndScale() {
 					if err != nil {
 						logError("Received error parsing memory", err)
 					}
-					log.Println("Container", containerName, "is using", memInMibi, "Mib memory and", cpuConverted, friendlyUnit)
+					logInfo(fmt.Sprintf("Container %s is using %d Mib memory and %d %s", containerName, memInMibi, cpuConverted, friendlyUnit))
 
 					if memInMibi > deploymentMemoryThreshold {
 						logWarning(fmt.Sprintf("Container %s is over the memory limit. Adding another replica", containerName))
-						//scaleUpDeployment(*namespace, *deploymentName)
 						shouldScale = true
-					}
-					if cpuConverted > deploymentCPUThreshold {
+					} else if cpuConverted > deploymentCPUThreshold {
 						logWarning(fmt.Sprintf("Container %s is over the CPU limit. Adding another replica", containerName))
-						//scaleUpDeployment(*namespace, *deploymentName)
 						shouldScale = true
+					} else {
+						logInfo("Pods are below thresholds")
+						shouldScale = false
 					}
+					if shouldScale {
+						logInfo("Scaling started")
+						scaleUpDeployment(*namespace, *deploymentName)
+						logInfo(fmt.Sprintf("Waiting %d seconds for cooldown", *cooldownInSeconds))
+						time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
+						shouldScale = false
+					}
+
 				}
 			}
 		}
