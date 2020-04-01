@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: sanepa
+  name: sanepa-example-deployment
   namespace: default
 spec:
   replicas: 1
@@ -9,6 +9,7 @@ spec:
     metadata:
       labels:
         app: sanepa
+        monitoring: example-deployment
     spec:
       serviceAccountName: sanepa-service-account
       containers:
