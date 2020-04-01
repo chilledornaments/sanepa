@@ -56,6 +56,22 @@ func authOutCluster() error {
 	return nil
 }
 
+func authInCluster() error {
+	config, err := rest.InClusterConfig()
+
+	if err != nil {
+		return err
+	}
+
+	clientset, err = kubernetes.NewForConfig(config)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func main() {
 
 	shouldScale = false
@@ -74,11 +90,16 @@ func main() {
 
 	if *inCluster {
 		logInfo("Running in cluster")
+		err = authInCluster()
+		if err != nil {
+			logError("Error authenticating in cluster", err)
+			os.Exit(1)
+		}
 	} else {
 		logInfo("Running outside of cluster")
 		err = authOutCluster()
 		if err != nil {
-			logError("Error authenticating", err)
+			logError("Error authenticating outside of cluster", err)
 			os.Exit(1)
 		}
 	}
