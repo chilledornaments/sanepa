@@ -4,6 +4,8 @@ The sane Kubernetes HPA
 
 `sanepa` checks pod resource usage against `deployment.spec.template.spec.containers.resources.limits` values and will scale up and down when a pod is above a set threshold.
 
+This project follows AWS EKS releases, which are well behind Kubernetes releases.
+
 ## Running
 
 You can find kubernetes examples in `examples/k8s/`
