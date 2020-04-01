@@ -14,7 +14,7 @@ spec:
       serviceAccountName: sanepa-service-account
       containers:
         - name: sanepa
-          image: mitchya1/sanepa:v1-k8s1.15.7
+          image: mitchya1/sanepa:v1-k8s1.15.7-latest
           command: ["/sanepa"]
           args:
             - "-incluster=true"
