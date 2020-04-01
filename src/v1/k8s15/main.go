@@ -21,7 +21,7 @@ var (
 	deploymentMemoryLimit     int
 	deploymentMemoryThreshold int
 	containerNameToMatch      string
-	shouldScale               bool
+	shouldScaleUp             bool
 	scaleStatus               string
 	namespace                 *string
 	deploymentName            *string
@@ -74,7 +74,7 @@ func authInCluster() error {
 
 func main() {
 
-	shouldScale = false
+	shouldScaleUp = false
 
 	inCluster = flag.Bool("incluster", true, "-incluster=false to run outside of a k8s cluster")
 	namespace = flag.String("ns", "", "Namespace to search in. Example: -ns=default")
@@ -166,20 +166,20 @@ func monitorAndScale() {
 
 					if memInMibi > deploymentMemoryThreshold {
 						logWarning(fmt.Sprintf("Container %s is over the memory limit. Adding another replica", containerName))
-						shouldScale = true
+						shouldScaleUp = true
 					} else if cpuConverted > deploymentCPUThreshold {
 						logWarning(fmt.Sprintf("Container %s is over the CPU limit. Adding another replica", containerName))
-						shouldScale = true
+						shouldScaleUp = true
 					} else {
 						logInfo("Containers are below thresholds")
-						shouldScale = false
+						shouldScaleUp = false
 					}
-					if shouldScale {
+					if shouldScaleUp {
 						logInfo("Scaling started")
 						scaleUpDeployment(*namespace, *deploymentName)
 						logInfo(fmt.Sprintf("Waiting %d seconds for cooldown", *cooldownInSeconds))
 						time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
-						shouldScale = false
+						shouldScaleUp = false
 					}
 
 				}
