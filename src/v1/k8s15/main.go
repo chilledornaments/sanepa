@@ -136,10 +136,10 @@ func monitorAndScale() {
 		logError("Error gathering deployment metrics", err)
 	}
 
-	logInfo(fmt.Sprintf("Minimum replicas is %d", deploymentMinReplicas))
-	logInfo(fmt.Sprintf("Maximum replicas is %d", deploymentMaxReplicas))
-	logInfo(fmt.Sprintf("Cooldown is %d", cooldownInSeconds))
-	logInfo(fmt.Sprintf("Scale down ok periods is %d", scaleDownOkPeriods))
+	logInfo(fmt.Sprintf("Minimum replicas is %d", *deploymentMinReplicas))
+	logInfo(fmt.Sprintf("Maximum replicas is %d", *deploymentMaxReplicas))
+	logInfo(fmt.Sprintf("Cooldown is %d", *cooldownInSeconds))
+	logInfo(fmt.Sprintf("Scale down ok periods is %d", *scaleDownOkPeriods))
 
 	for k := range deploymentInfo.Spec.Template.Spec.Containers {
 		deploymentCPULimit = parseCPULimit(deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.CPU)
