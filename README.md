@@ -29,3 +29,8 @@ The sane Kubernetes HPA
 `-cooldown`: How much time should pass after a scale up event before checking again. If your application takes 90 seconds to start, you should set this to at least 90.
 
 `-scaledownok`: How many times must all pods be under thresholds before scaling down.
+
+## TODO
+
+- Cleanup codebase
+- Use a real logger
