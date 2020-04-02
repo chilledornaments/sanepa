@@ -1,19 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 )
 
 func parseCPUReading(cpu string) (int, string, error) {
+	logDebug(fmt.Sprintf("parseCPUReading received %s", cpu))
 	// We want the last item in the string
 	unit := string(cpu[len(cpu)-1])
 	cpuStr := cpu[0 : len(cpu)-1]
 	cpuInt, err := strconv.Atoi(cpuStr)
 
 	if err != nil {
-		log.Println("Unable to convert", cpuStr, "to int")
-		log.Println(err.Error())
+		logError(fmt.Sprintf("Unable to convert %s to int", cpuStr), err)
 		return 0, "", err
 	}
 

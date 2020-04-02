@@ -19,3 +19,7 @@ func logError(message string, e error) {
 func logScaleEvent(message string) {
 	log.Println("EVENT:", message)
 }
+
+func logDebug(message string) {
+	log.Println("DEBUG:", message)
+}
