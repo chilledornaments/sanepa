@@ -34,7 +34,7 @@ func scaleUpDeployment(namespace string, deploymentName string) error {
 		return err
 	}
 
-	logInfo(fmt.Sprintf("Successfully scaled %s up to %d replicas", deploymentName, newReplicas))
+	logScaleEvent(fmt.Sprintf("Successfully scaled %s up to %d replicas", deploymentName, newReplicas))
 	return nil
 
 }
@@ -66,7 +66,7 @@ func scaleDownDeployment(namespace string, deploymentName string) error {
 		return err
 	}
 
-	logInfo(fmt.Sprintf("Successfully scaled %s down to %d replicas", deploymentName, newReplicas))
+	logScaleEvent(fmt.Sprintf("Successfully scaled %s down to %d replicas", deploymentName, newReplicas))
 	return nil
 
 }

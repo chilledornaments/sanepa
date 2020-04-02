@@ -192,6 +192,7 @@ func monitorAndScale() {
 							if err == errScalingLimitReached {
 								hasScaled = false
 							}
+							scaleDownOkCount = 0
 							time.Sleep(30 * time.Second)
 						}
 						shouldScaleUp = false

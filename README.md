@@ -38,3 +38,6 @@ You can find kubernetes examples in `examples/k8s/`
 
 - Cleanup codebase
 - Use a real logger
+- Handle all memory and CPU suffixes
+  - Details in `kubectl explain PodMetrics.containers.usage`
+- Don't scale up immediately

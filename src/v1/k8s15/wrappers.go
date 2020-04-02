@@ -27,10 +27,10 @@ func convertCPUWrapper(cpuUsage int, cpuUnit string) (int, string) {
 		return convertNanoToMilli(cpuUsage), "milliCPU"
 	case "m":
 		return cpuUsage, "milliCPU"
+	default:
+		logError(fmt.Sprintf("Encountered unknown CPU unit %s", cpuUnit), nil)
+		return cpuUsage, "UNKNOWN"
 	}
-
-	// This should never get called
-	return cpuUsage, "milliCPU"
 }
 
 func parseCPULimit(cpuLimit string) int {
@@ -88,9 +88,11 @@ func convertMemoryToMibiWrapper(memoryUsage int, memoryType string) int {
 		return memoryUsage
 	case "G":
 		return memoryUsage * 1024
+	default:
+		logError(fmt.Sprintf("Received unknown memory unit %s", memoryType), nil)
+		// This is probably wrong
+		return memoryUsage
 	}
-	// This should never return
-	return memoryUsage
 }
 
 func generateThreshold(limit int, threshold int) int {
