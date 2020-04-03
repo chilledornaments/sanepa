@@ -156,16 +156,17 @@ func monitorAndScale() {
 			containerName := podMetrics.Items[k].Metadata.Name
 
 			for key := range podMetrics.Items[k].Containers {
-				// Convert CPU readings
-				cpuInt, cpuUnit, err := parseCPUReading(podMetrics.Items[k].Containers[key].Usage.CPU)
-				cpuConverted, friendlyUnit := convertCPUWrapper(cpuInt, cpuUnit)
 
 				if podMetrics.Items[k].Containers[key].Name != containerNameToMatch {
 					logInfo(fmt.Sprintf("Skipping %s as it is not a member of the deployment %s", podMetrics.Items[k].Containers[key].Name, string(*deploymentName)))
 				} else {
 
+					// Convert CPU readings
+					cpuInt, cpuUnit, err := parseCPUReading(podMetrics.Items[k].Containers[key].Usage.CPU)
+					cpuConverted, friendlyUnit := convertCPUWrapper(cpuInt, cpuUnit)
+
 					if err != nil {
-						logInfo("Received error parsing CPU")
+						logError("Received error parsing CPU", err)
 					}
 					// Convert memory readings
 					memoryInt, memoryUnit, err := parseMemoryReading(podMetrics.Items[k].Containers[key].Usage.Memory)

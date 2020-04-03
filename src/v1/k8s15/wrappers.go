@@ -27,8 +27,10 @@ func convertCPUWrapper(cpuUsage int, cpuUnit string) (int, string) {
 		return convertNanoToMilli(cpuUsage), "milliCPU"
 	case "m":
 		return cpuUsage, "milliCPU"
+	case "u":
+		return convertMicroToMilli(cpuUsage), "milliCPU"
 	default:
-		logError(fmt.Sprintf("Encountered unknown CPU unit %s", cpuUnit), nil)
+		logDebug(fmt.Sprintf("Encountered unknown CPU unit %s", cpuUnit))
 		return cpuUsage, "UNKNOWN"
 	}
 }
@@ -52,14 +54,17 @@ func convertNanoToMilli(cpuUsage int) int {
 	return cpuUsage / 1000000
 }
 
+func convertMicroToMilli(cpuUsage int) int {
+	return cpuUsage / 1000
+}
+
 func parseMemoryReading(memory string) (int, string, error) {
 	// Second from last item in the string should be e.g. K/M/G
 	unit := string(memory[len(memory)-2])
 	memoryStr := memory[0 : len(memory)-2]
 	memoryInt, err := strconv.Atoi(memoryStr)
 	if err != nil {
-		log.Println("Unable to convert", memoryStr, "to int")
-		log.Println(err.Error())
+		logError(fmt.Sprintf("Unable to convert %s to int", memoryStr), err)
 		return 0, "", err
 	}
 
@@ -70,7 +75,7 @@ func parseMemoryLimit(memoryLimit string) int {
 	limit, unit, err := parseMemoryReading(memoryLimit)
 
 	if err != nil {
-		log.Println("Error parsing memory limit")
+		logError("Error parsing memory limit", err)
 		// Placeholder, we shouldn't return 0 because we will always scale
 		// We shouldn't return 1000 cause then we'll probably never scale
 		return 1000
@@ -89,7 +94,7 @@ func convertMemoryToMibiWrapper(memoryUsage int, memoryType string) int {
 	case "G":
 		return memoryUsage * 1024
 	default:
-		logError(fmt.Sprintf("Received unknown memory unit %s", memoryType), nil)
+		logDebug(fmt.Sprintf("Received unknown memory unit %s", memoryType))
 		// This is probably wrong
 		return memoryUsage
 	}
