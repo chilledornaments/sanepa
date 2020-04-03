@@ -26,6 +26,7 @@ spec:
             - "-max=4"
             - "-cooldown=100"
             - "-scaledownok=5"
+            - "-scaleupok=2"
           resources:
               limits:
                 memory: "50Mi"
