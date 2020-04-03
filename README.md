@@ -34,11 +34,15 @@ One SanePA container should watch one deployment. SanePA has a very small footpr
 
 `-min`: The minimum number of replicas in the deployment. Defaults to 1.
 
-`-cooldown`: How much time should pass after a scale up event before checking again. If your application takes 90 seconds to start, you should set this to at least 90.
+`-cooldown`: How much time should pass after a scale up event before checking again. If your application takes 90 seconds to start, you should set this to at least 90. Defaults to 30.
 
-`-scaledownok`: How many times must all pods be under thresholds before scaling down.
+`-scaledownok`: How many times must all pods be under thresholds before scaling down. Defaults to 3.
 
-`-scaleupok`: How many times must a pod be above thresholds before scaling up.
+`-scaleupok`: How many times must a pod be above thresholds before scaling up. Defaults to 2.
+
+`-gl-enabled`: Enable logging to Graylog. Defaults to `false`.
+
+`-gl-server`: `IP:PORT` of Graylog server. Defaults to `""`. Required if `-gl-enabled` is `true`.
 
 ## TODO
 
@@ -47,3 +51,4 @@ One SanePA container should watch one deployment. SanePA has a very small footpr
   - Add Graylog
 - Handle all memory and CPU suffixes
   - Memory details in `kubectl explain PodMetrics.containers.usage`
+  
