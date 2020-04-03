@@ -52,7 +52,7 @@ func logInfo(message string) {
 
 	if *graylogEnabled {
 		_, file, line, _ := runtime.Caller(1)
-		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName, "job_name": "sanepa"}
+		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName}
 		m := wrapBuildGraylogMessage("info", message, 6, extra)
 		sendGraylogMessage(m)
 	}
@@ -63,7 +63,7 @@ func logWarning(message string) {
 
 	if *graylogEnabled {
 		_, file, line, _ := runtime.Caller(1)
-		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName, "job_name": "sanepa"}
+		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName}
 		m := wrapBuildGraylogMessage("warning", message, 4, extra)
 		sendGraylogMessage(m)
 	}
@@ -74,7 +74,7 @@ func logError(message string, e error) {
 
 	if *graylogEnabled {
 		_, file, line, _ := runtime.Caller(1)
-		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName, "job_name": "sanepa"}
+		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName}
 		m := wrapBuildGraylogMessage("error", fmt.Sprintf("%s err=%s", message, err.Error()), 3, extra)
 		sendGraylogMessage(m)
 	}
@@ -84,7 +84,7 @@ func logScaleEvent(message string) {
 	log.Println("EVENT:", message)
 	if *graylogEnabled {
 		_, file, line, _ := runtime.Caller(1)
-		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName, "job_name": "sanepa"}
+		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName}
 		m := wrapBuildGraylogMessage("scaleEvent", message, 5, extra)
 		sendGraylogMessage(m)
 	}
@@ -94,7 +94,7 @@ func logDebug(message string) {
 	log.Println("DEBUG:", message)
 	if *graylogEnabled {
 		_, file, line, _ := runtime.Caller(1)
-		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName, "job_name": "sanepa"}
+		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName}
 		m := wrapBuildGraylogMessage("debug", message, 7, extra)
 		sendGraylogMessage(m)
 	}
