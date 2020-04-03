@@ -12,6 +12,8 @@ You can find kubernetes examples in `examples/k8s/`.
 
 Do **not** run multiple SanePA deployments that watch the same deployment.
 
+One SanePA container should watch one deployment. SanePA has a very small footprint, so resource consumption shouldn't be a concern
+
 ### Notes
 
 `sanepa` runs its checks every ten seconds. You should take that into consideration when setting `-cooldown` and `-scaledownok` arg values.
@@ -44,4 +46,3 @@ Do **not** run multiple SanePA deployments that watch the same deployment.
 - Use a real logger
 - Handle all memory and CPU suffixes
   - Details in `kubectl explain PodMetrics.containers.usage`
-  
