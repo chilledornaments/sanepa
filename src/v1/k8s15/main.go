@@ -139,7 +139,7 @@ func monitorAndScale() {
 	logInfo(fmt.Sprintf("Minimum replicas is %d", *deploymentMinReplicas))
 	logInfo(fmt.Sprintf("Maximum replicas is %d", *deploymentMaxReplicas))
 	logInfo(fmt.Sprintf("Cooldown period is %d seconds", *cooldownInSeconds))
-	logInfo(fmt.Sprintf("Scale down ok periods is %d seconds", *scaleDownOkPeriods))
+	logInfo(fmt.Sprintf("Scale down ok periods is %d", *scaleDownOkPeriods))
 	logInfo(fmt.Sprintf("Scale up ok periods is %d", *scaleUpOkPeriods))
 
 	for k := range deploymentInfo.Spec.Template.Spec.Containers {
@@ -191,6 +191,7 @@ func monitorAndScale() {
 						logInfo("Containers are below thresholds")
 						scaleDownOkCount++
 						if scaleDownOkCount >= *scaleDownOkPeriods && hasScaled {
+							logDebug(fmt.Sprintf("scaleDownOkCount: %d scaleDownOkPeriods: %d", scaleDownOkCount, *scaleDownOkPeriods))
 							logInfo("Attempting to scale down by one replica")
 							err = scaleDownDeployment(*namespace, *deploymentName)
 							if err == errScalingLimitReached {
@@ -211,6 +212,7 @@ func monitorAndScale() {
 						time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
 						shouldScaleUp = false
 						hasScaled = true
+						scaleUpOkCount = 0
 					}
 
 				}
