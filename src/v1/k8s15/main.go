@@ -34,11 +34,9 @@ var (
 	scaleDownOkCount          int
 	shouldScaleDown           bool
 	scaleDownOkPeriods        *int
+	scaleUpOkCount            int
+	scaleUpOkPeriods          *int
 	hasScaled                 bool
-)
-
-const (
-	alphabet = "abcdefghijklmnopqrstuvwxyz"
 )
 
 func authOutCluster() error {
@@ -81,6 +79,7 @@ func main() {
 
 	shouldScaleUp = false
 	scaleDownOkCount = 0
+	scaleUpOkCount = 0
 	hasScaled = false
 
 	inCluster = flag.Bool("incluster", true, "-incluster=false to run outside of a k8s cluster")
@@ -92,6 +91,7 @@ func main() {
 	deploymentMinReplicas = flag.Int("min", 1, "The minimum number of replicas in the deployment. Example: -min=2")
 	cooldownInSeconds = flag.Int("cooldown", 30, "The number of seconds to wait after scaling. If your application takes 120 seconds to become ready, set this to 120. Example: -cooldown=10")
 	scaleDownOkPeriods = flag.Int("scaledownok", 3, "For how many consecutive periods of time must the containers be under threshold until we scale down? Example: -scaledownok=3")
+	scaleUpOkPeriods = flag.Int("scaleupok", 2, "How many consecutive periods must be a pod be above threshold before scaling?. Example -scaleupok=5")
 	flag.Parse()
 
 	logInfo("Starting SanePA")
@@ -140,6 +140,7 @@ func monitorAndScale() {
 	logInfo(fmt.Sprintf("Maximum replicas is %d", *deploymentMaxReplicas))
 	logInfo(fmt.Sprintf("Cooldown period is %d seconds", *cooldownInSeconds))
 	logInfo(fmt.Sprintf("Scale down ok periods is %d seconds", *scaleDownOkPeriods))
+	logInfo(fmt.Sprintf("Scale up ok periods is %d", *scaleUpOkPeriods))
 
 	for k := range deploymentInfo.Spec.Template.Spec.Containers {
 		deploymentCPULimit = parseCPULimit(deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.CPU)
@@ -178,11 +179,13 @@ func monitorAndScale() {
 					}
 					logInfo(fmt.Sprintf("Container %s is using %d Mib memory and %d %s", containerName, memInMibi, cpuConverted, friendlyUnit))
 
-					if memInMibi > deploymentMemoryThreshold {
-						logWarning(fmt.Sprintf("Container %s is over the memory limit. Adding another replica", containerName))
+					if memInMibi >= deploymentMemoryThreshold {
+						logWarning(fmt.Sprintf("Container %s is over the memory limit. Scale up trigger count is %d", containerName, scaleUpOkCount))
+						scaleUpOkCount++
 						shouldScaleUp = true
-					} else if cpuConverted > deploymentCPUThreshold {
-						logWarning(fmt.Sprintf("Container %s is over the CPU limit. Adding another replica", containerName))
+					} else if cpuConverted >= deploymentCPUThreshold {
+						logWarning(fmt.Sprintf("Container %s is over the CPU limit. Scale up trigger count is %d", containerName, scaleUpOkCount))
+						scaleUpOkCount++
 						shouldScaleUp = true
 					} else {
 						logInfo("Containers are below thresholds")
@@ -198,7 +201,7 @@ func monitorAndScale() {
 						}
 						shouldScaleUp = false
 					}
-					if shouldScaleUp {
+					if shouldScaleUp && scaleUpOkCount >= *scaleUpOkPeriods {
 						logInfo("Scaling started")
 						err = scaleUpDeployment(*namespace, *deploymentName)
 						if err != nil {

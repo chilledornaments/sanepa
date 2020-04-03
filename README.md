@@ -8,7 +8,9 @@ This project follows AWS EKS releases, which are well behind Kubernetes releases
 
 ## Running
 
-You can find kubernetes examples in `examples/k8s/`
+You can find kubernetes examples in `examples/k8s/`.
+
+Do **not** run multiple SanePA deployments that watch the same deployment.
 
 ### Notes
 
@@ -34,10 +36,12 @@ You can find kubernetes examples in `examples/k8s/`
 
 `-scaledownok`: How many times must all pods be under thresholds before scaling down.
 
+`-scaleupok`: How many times must a pod be above thresholds before scaling up.
+
 ## TODO
 
 - Cleanup codebase
 - Use a real logger
 - Handle all memory and CPU suffixes
   - Details in `kubectl explain PodMetrics.containers.usage`
-- Don't scale up immediately
+  
