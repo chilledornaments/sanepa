@@ -44,5 +44,6 @@ One SanePA container should watch one deployment. SanePA has a very small footpr
 
 - Cleanup codebase
 - Use a real logger
+  - Add Graylog
 - Handle all memory and CPU suffixes
-  - Details in `kubectl explain PodMetrics.containers.usage`
+  - Memory details in `kubectl explain PodMetrics.containers.usage`
