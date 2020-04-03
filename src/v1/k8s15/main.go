@@ -197,7 +197,9 @@ func monitorAndScale() {
 						shouldScaleUp = true
 					} else {
 						logInfo("Containers are below thresholds")
-						scaleDownOkCount++
+						if hasScaled {
+							scaleDownOkCount++
+						}
 						if scaleDownOkCount >= *scaleDownOkPeriods && hasScaled {
 							logDebug(fmt.Sprintf("scaleDownOkCount: %d scaleDownOkPeriods: %d", scaleDownOkCount, *scaleDownOkPeriods))
 							logInfo("Attempting to scale down by one replica")
@@ -206,6 +208,8 @@ func monitorAndScale() {
 								hasScaled = false
 							}
 							scaleDownOkCount = 0
+							// We've scaled down, reset hasScaled
+							hasScaled = false
 							time.Sleep(30 * time.Second)
 						}
 						shouldScaleUp = false
@@ -221,6 +225,7 @@ func monitorAndScale() {
 						shouldScaleUp = false
 						hasScaled = true
 						scaleUpOkCount = 0
+						scaleDownOkCount = 0
 					}
 
 				}
