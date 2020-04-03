@@ -31,12 +31,14 @@ var (
 	deploymentMaxReplicas     *int
 	deploymentMinReplicas     *int
 	cooldownInSeconds         *int
+	graylogEnabled            *bool
 	scaleDownOkCount          int
 	shouldScaleDown           bool
 	scaleDownOkPeriods        *int
 	scaleUpOkCount            int
 	scaleUpOkPeriods          *int
 	hasScaled                 bool
+	graylogUDPWriter          *string
 )
 
 func authOutCluster() error {
@@ -92,7 +94,13 @@ func main() {
 	cooldownInSeconds = flag.Int("cooldown", 30, "The number of seconds to wait after scaling. If your application takes 120 seconds to become ready, set this to 120. Example: -cooldown=10")
 	scaleDownOkPeriods = flag.Int("scaledownok", 3, "For how many consecutive periods of time must the containers be under threshold until we scale down? Example: -scaledownok=3")
 	scaleUpOkPeriods = flag.Int("scaleupok", 2, "How many consecutive periods must be a pod be above threshold before scaling?. Example -scaleupok=5")
+	graylogEnabled = flag.Bool("gl-enabled", false, "Enable logging to Graylog. Example: -gl-enabled=true")
+	graylogUDPWriter = flag.String("gl-server", "", "IP:PORT of Graylog server. UDP only. Required if -gl-enabled=true. Example: -gl-server=10.10.5.44:11411")
 	flag.Parse()
+
+	if *graylogEnabled {
+		initGraylog()
+	}
 
 	logInfo("Starting SanePA")
 
