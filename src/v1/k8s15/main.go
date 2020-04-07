@@ -92,7 +92,7 @@ func main() {
 		}
 	}
 
-	watcher := time.Tick(10 * time.Second)
+	watcher := time.Tick(20 * time.Second)
 
 	for range watcher {
 		monitorAndScale()
@@ -105,6 +105,7 @@ func monitorAndScale() {
 	fmt.Println("********************************************************")
 
 	currentContainerCount := 0
+	metricParseError := false
 
 	podMetrics, err := getPodMetrics(*namespace)
 
@@ -146,7 +147,7 @@ func monitorAndScale() {
 
 						// Handle pods in same namespace from different deployment
 						if podMetrics.Items[k].Containers[key].Name != containerNameToMatch {
-							logInfo(fmt.Sprintf("Skipping %s as it is not a member of the deployment %s", podMetrics.Items[k].Containers[key].Name, string(*deploymentName)))
+							logInfo(fmt.Sprintf("Skipping %s as it is not a member of the deployment %s", podMetrics.Items[k].Containers[key].Name, *deploymentName))
 						} else {
 
 							// Convert CPU readings
@@ -155,6 +156,7 @@ func monitorAndScale() {
 
 							if err != nil {
 								logError("Received error parsing CPU", err)
+								metricParseError = true
 							}
 							// Convert memory readings
 							memoryInt, memoryUnit, err := parseMemoryReading(podMetrics.Items[k].Containers[key].Usage.Memory)
@@ -163,52 +165,60 @@ func monitorAndScale() {
 
 							if err != nil {
 								logError("Received error parsing memory", err)
+								metricParseError = true
 							}
 
-							logInfo(fmt.Sprintf("Container %s is using %d Mib memory and %d %s", containerName, memInMibi, cpuConverted, friendlyUnit))
+							if !metricParseError {
 
-							if memInMibi >= deploymentMemoryThreshold {
-								logWarning(fmt.Sprintf("Container %s is over the memory limit. Scale up trigger count is %d", containerName, scaleUpOkCount))
-								scaleUpOkCount++
-								shouldScaleUp = true
-							} else if cpuConverted >= deploymentCPUThreshold {
-								logWarning(fmt.Sprintf("Container %s is over the CPU limit. Scale up trigger count is %d", containerName, scaleUpOkCount))
-								scaleUpOkCount++
-								shouldScaleUp = true
-							} else {
-								logInfo("Containers are below thresholds")
-								if hasScaled {
-									scaleDownOkCount++
+								logInfo(fmt.Sprintf("Container %s is using %d Mib memory and %d %s", containerName, memInMibi, cpuConverted, friendlyUnit))
+
+								if memInMibi >= deploymentMemoryThreshold {
+									scaleUpOkCount++
+									logWarning(fmt.Sprintf("Container %s is over the memory limit. Scale up trigger count is %d", containerName, scaleUpOkCount))
+									shouldScaleUp = true
+								} else if cpuConverted >= deploymentCPUThreshold {
+									scaleUpOkCount++
+									logWarning(fmt.Sprintf("Container %s is over the CPU limit. Scale up trigger count is %d", containerName, scaleUpOkCount))
+									shouldScaleUp = true
+								} else {
+									logInfo(fmt.Sprintf("Container %s is below thresholds", containerName))
+									if hasScaled {
+										scaleDownOkCount++
+									}
+									if (scaleDownOkCount >= *scaleDownOkPeriods) && hasScaled {
+										logDebug(fmt.Sprintf("scaleDownOkCount: %d scaleDownOkPeriods: %d", scaleDownOkCount, *scaleDownOkPeriods))
+										logInfo("Attempting to scale down by one replica")
+										err = scaleDownDeployment(*namespace, *deploymentName)
+										if err == errScalingLimitReached {
+											hasScaled = false
+										}
+										scaleDownOkCount = 0
+										// We've scaled down, reset hasScaled
+										hasScaled = false
+										logInfo(fmt.Sprintf("Waiting %d seconds for cooldown", *cooldownInSeconds))
+										time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
+									}
+									// Handle situations where one highly utilized container could increase scaleUpOkCount infinitely in an otherwise healthy deployment
+									if scaleUpOkCount > 0 {
+										scaleUpOkCount--
+									}
+									shouldScaleUp = false
 								}
-								if (scaleDownOkCount >= *scaleDownOkPeriods) && hasScaled {
-									logDebug(fmt.Sprintf("scaleDownOkCount: %d scaleDownOkPeriods: %d", scaleDownOkCount, *scaleDownOkPeriods))
-									logInfo("Attempting to scale down by one replica")
-									err = scaleDownDeployment(*namespace, *deploymentName)
-									if err == errScalingLimitReached {
+
+								if shouldScaleUp && (scaleUpOkCount >= *scaleUpOkPeriods) {
+									logInfo("Scale up started")
+									err = scaleUpDeployment(*namespace, *deploymentName)
+									if err != nil {
 										hasScaled = false
 									}
-									scaleDownOkCount = 0
-									// We've scaled down, reset hasScaled
-									hasScaled = false
+									logInfo(fmt.Sprintf("Waiting %d seconds for cooldown", *cooldownInSeconds))
 									time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
+									shouldScaleUp = false
+									hasScaled = true
+									scaleUpOkCount = 0
+									scaleDownOkCount = 0
 								}
-								shouldScaleUp = false
 							}
-
-							if shouldScaleUp && (scaleUpOkCount >= *scaleUpOkPeriods) {
-								logInfo("Scale up started")
-								err = scaleUpDeployment(*namespace, *deploymentName)
-								if err != nil {
-									hasScaled = false
-								}
-								logInfo(fmt.Sprintf("Waiting %d seconds for cooldown", *cooldownInSeconds))
-								time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
-								shouldScaleUp = false
-								hasScaled = true
-								scaleUpOkCount = 0
-								scaleDownOkCount = 0
-							}
-
 						}
 					}
 				}

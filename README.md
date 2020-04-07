@@ -16,7 +16,7 @@ One SanePA container should watch one deployment. SanePA has a very small footpr
 
 ### Notes
 
-`sanepa` runs its checks every ten seconds. You should take that into consideration when setting `-cooldown` and `-scaledownok` arg values.
+`sanepa` runs its checks every 20 seconds. You should take that into consideration when setting `-cooldown` and `-scaledownok` arg values.
 
 If you manually scale a deployment, `sanepa` will not try to scale it back down until it reaches another scaling event.
 
