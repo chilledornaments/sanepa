@@ -20,7 +20,6 @@ require (
 	gopkg.in/Graylog2/go-gelf.v2 v2.0.0-20191017102106-1550ee647df0
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/api v0.15.7
 	k8s.io/apimachinery v0.15.7
 	k8s.io/client-go v0.15.7
 	k8s.io/klog v1.0.0 // indirect

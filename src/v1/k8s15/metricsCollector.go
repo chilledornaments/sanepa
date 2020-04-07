@@ -18,9 +18,11 @@ func getPodMetrics(namespace string) (*podMetricsStruct, error) {
 	podMetrics := &podMetricsStruct{}
 
 	data, err := clientset.RESTClient().Get().AbsPath(url).DoRaw()
+
 	if err != nil {
 		return nil, err
 	}
+
 	err = json.Unmarshal(data, &podMetrics)
 
 	if err != nil {
