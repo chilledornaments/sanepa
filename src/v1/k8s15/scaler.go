@@ -53,7 +53,7 @@ func scaleDownDeployment(namespace string, deploymentName string) error {
 
 	if int(d.Spec.Replicas) <= *deploymentMinReplicas {
 		logWarning("Scaling lower limit reached. Not scaling down")
-		return errScalingLimitReached
+		return nil
 	}
 
 	newReplicas := d.Spec.Replicas - 1
