@@ -123,6 +123,8 @@ func monitorAndScale() {
 	} else {
 
 		deploymentInfo, err := getDeploymentInfo(*namespace, *deploymentName)
+		fmt.Println(deploymentInfo)
+
 		if len(deploymentInfo.Items[0].Spec.Template.Spec.Containers) < 1 {
 			logError("Deployment.Spec.Template.Spec.Containers is empty", nil)
 			metricParseError = true
