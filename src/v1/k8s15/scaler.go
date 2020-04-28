@@ -47,7 +47,8 @@ func scaleDownDeployment(namespace string, deploymentName string) error {
 	d, err := deploymentsClient.GetScale(deploymentName, o)
 
 	if err != nil {
-		panic(err)
+		logError("Error attempting to get deployment scale", err)
+		return err
 	}
 
 	if int(d.Spec.Replicas) <= *deploymentMinReplicas {

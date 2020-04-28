@@ -32,4 +32,11 @@ var (
 	scaleUpOkPeriods          *int
 	hasScaled                 bool
 	graylogUDPWriter          *string
+	breachpercentthreshold    *int
+	shouldScaleUpCounter      int
+	shouldScaleDownCounter    int
+	// thresholdBreachesCounter is the number of containers that are breaching either CPU or memory thresholds
+	thresholdBreachesCounter int
+	metricState              map[string]metricReadings
+	metricParseError         bool
 )

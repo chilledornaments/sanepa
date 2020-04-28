@@ -29,6 +29,7 @@ spec:
             - "-scaleupok=2"
             - "-gl-enabled=true"
             - "-gl-server=10.10.5.44:15151"
+            - "-breachpercentthreshold=25"
           resources:
               limits:
                 memory: "50Mi"

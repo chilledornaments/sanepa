@@ -54,6 +54,10 @@ func main() {
 	scaleDownOkCount = 0
 	scaleUpOkCount = 0
 	hasScaled = false
+	shouldScaleUpCounter = 0
+	shouldScaleDownCounter = 0
+	thresholdBreachesCounter = 0
+	metricState = make(map[string]metricReadings)
 
 	inCluster = flag.Bool("incluster", true, "-incluster=false to run outside of a k8s cluster")
 	namespace = flag.String("ns", "", "Namespace to search in. Example: -ns=default")
@@ -65,6 +69,7 @@ func main() {
 	cooldownInSeconds = flag.Int("cooldown", 30, "The number of seconds to wait after scaling. If your application takes 120 seconds to become ready, set this to 120. Example: -cooldown=10")
 	scaleDownOkPeriods = flag.Int("scaledownok", 3, "For how many consecutive periods of time must the containers be under threshold until we scale down? Example: -scaledownok=3")
 	scaleUpOkPeriods = flag.Int("scaleupok", 2, "How many consecutive periods must be a pod be above threshold before scaling?. Example -scaleupok=5")
+	breachpercentthreshold = flag.Int("breachpercentthreshold", 50, "What percentage of pods must be in breaching state before scaling up?")
 	graylogEnabled = flag.Bool("gl-enabled", false, "Enable logging to Graylog. Example: -gl-enabled=true")
 	graylogUDPWriter = flag.String("gl-server", "", "IP:PORT of Graylog server. UDP only. Required if -gl-enabled=true. Example: -gl-server=10.10.5.44:11411")
 
@@ -72,6 +77,8 @@ func main() {
 
 	if *graylogEnabled {
 		initGraylog()
+	} else {
+		logInfo("Not logging to Graylog")
 	}
 
 	logInfo("Starting SanePA")
@@ -92,7 +99,7 @@ func main() {
 		}
 	}
 
-	watcher := time.Tick(20 * time.Second)
+	watcher := time.Tick(40 * time.Second)
 
 	for range watcher {
 		monitorAndScale()
@@ -105,7 +112,7 @@ func monitorAndScale() {
 	fmt.Println("********************************************************")
 
 	currentContainerCount := 0
-	metricParseError := false
+	metricParseError = false
 
 	podMetrics, err := getPodMetrics(*namespace)
 
@@ -149,80 +156,119 @@ func monitorAndScale() {
 						if podMetrics.Items[k].Containers[key].Name != containerNameToMatch {
 							logInfo(fmt.Sprintf("Skipping %s as it is not a member of the deployment %s", podMetrics.Items[k].Containers[key].Name, *deploymentName))
 						} else {
-
-							// Convert CPU readings
-							cpuInt, cpuUnit, err := parseCPUReading(podMetrics.Items[k].Containers[key].Usage.CPU)
-							cpuConverted, friendlyUnit := convertCPUWrapper(cpuInt, cpuUnit)
-
+							err := storeMetricData(containerName, podMetrics.Items[k].Containers[key].Usage.CPU, podMetrics.Items[k].Containers[key].Usage.Memory)
 							if err != nil {
-								logError("Received error parsing CPU", err)
 								metricParseError = true
-							}
-							// Convert memory readings
-							memoryInt, memoryUnit, err := parseMemoryReading(podMetrics.Items[k].Containers[key].Usage.Memory)
-
-							memInMibi := convertMemoryToMibiWrapper(memoryInt, memoryUnit)
-
-							if err != nil {
-								logError("Received error parsing memory", err)
-								metricParseError = true
-							}
-
-							if !metricParseError {
-
-								logInfo(fmt.Sprintf("Container %s is using %d Mib memory and %d %s", containerName, memInMibi, cpuConverted, friendlyUnit))
-
-								if memInMibi >= deploymentMemoryThreshold {
-									scaleUpOkCount++
-									logWarning(fmt.Sprintf("Container %s is over the memory limit. Scale up trigger count is %d", containerName, scaleUpOkCount))
-									shouldScaleUp = true
-								} else if cpuConverted >= deploymentCPUThreshold {
-									scaleUpOkCount++
-									logWarning(fmt.Sprintf("Container %s is over the CPU limit. Scale up trigger count is %d", containerName, scaleUpOkCount))
-									shouldScaleUp = true
-								} else {
-									logInfo(fmt.Sprintf("Container %s is below thresholds", containerName))
-									if hasScaled {
-										scaleDownOkCount++
-									}
-									if (scaleDownOkCount >= *scaleDownOkPeriods) && hasScaled {
-										logDebug(fmt.Sprintf("scaleDownOkCount: %d scaleDownOkPeriods: %d", scaleDownOkCount, *scaleDownOkPeriods))
-										logInfo("Attempting to scale down by one replica")
-										err = scaleDownDeployment(*namespace, *deploymentName)
-										if err == errScalingLimitReached {
-											hasScaled = false
-										}
-										scaleDownOkCount = 0
-										// We've scaled down, reset hasScaled
-										hasScaled = false
-										logInfo(fmt.Sprintf("Waiting %d seconds for cooldown", *cooldownInSeconds))
-										time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
-									}
-									// Handle situations where one highly utilized container could increase scaleUpOkCount infinitely in an otherwise healthy deployment
-									if scaleUpOkCount > 0 {
-										scaleUpOkCount--
-									}
-									shouldScaleUp = false
-								}
-
-								if shouldScaleUp && (scaleUpOkCount >= *scaleUpOkPeriods) {
-									logInfo("Scale up started")
-									err = scaleUpDeployment(*namespace, *deploymentName)
-									if err != nil {
-										hasScaled = false
-									}
-									logInfo(fmt.Sprintf("Waiting %d seconds for cooldown", *cooldownInSeconds))
-									time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
-									shouldScaleUp = false
-									hasScaled = true
-									scaleUpOkCount = 0
-									scaleDownOkCount = 0
-								}
+							} else {
+								metricParseError = false
 							}
 						}
 					}
 				}
 			}
+			if !metricParseError {
+				checkMetricThresholds()
+				checkIfShouldScale()
+			}
+
 		}
 	}
+}
+
+func storeMetricData(containerName string, cpu string, memory string) error {
+	cpuInt, s, err := parseCPUReading(cpu)
+	if err != nil {
+		logError("Error parsing CPU reading", err)
+		return err
+	}
+
+	c, _ := convertCPUWrapper(cpuInt, s)
+
+	memInt, s, err := parseMemoryReading(memory)
+	if err != nil {
+		logError("Error parsing memory reading", err)
+		return err
+	}
+
+	m := convertMemoryToMibiWrapper(memInt, s)
+	mr := metricReadings{CPU: c, Memory: m}
+
+	metricState[containerName] = mr
+	return nil
+}
+
+func checkMetricThresholds() {
+
+	for k, v := range metricState {
+		if v.CPU > deploymentCPUThreshold {
+			logInfo(fmt.Sprintf("%s is breaching CPU: %d mCPU used", k, v.CPU))
+			thresholdBreachesCounter++
+		} else if v.Memory > deploymentMemoryThreshold {
+			logInfo(fmt.Sprintf("%s is breaching memory: %d MiB used", k, v.Memory))
+			thresholdBreachesCounter++
+		} else {
+			logInfo(fmt.Sprintf("%s is not breaching", k))
+			if thresholdBreachesCounter > 0 {
+				thresholdBreachesCounter--
+			}
+
+		}
+	}
+}
+
+func checkIfShouldScale() bool {
+	/*
+		If we have 15 containers running and 4 are breaching, 26% of the containers are breaching
+		If this percent is greater than the breachpercentthreshold, we'll increment the shouldScaleUpCounter counter
+		If the shouldScaleUpCounter counter is greater than the scaleupok value, we'll scale up
+	*/
+	logInfo(fmt.Sprintf("ScaleDownCounter=%d ScaleUpCounter=%d NumberOfBreachingContainers=%d NumberOfPods=%d", shouldScaleDownCounter, shouldScaleUpCounter, thresholdBreachesCounter, len(metricState)))
+
+	// Enough containers have been breaching for long enough for us to scale up
+	if shouldScaleUpCounter >= *scaleUpOkPeriods {
+		logScaleEvent("shouldScaleUpCounter has hit threshold. Attempting to add another replica, resetting scale up counter, and entering cooldown")
+		if err := scaleUpDeployment(*namespace, *deploymentName); err != nil {
+			return true
+		}
+		shouldScaleUpCounter = 0
+		time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
+		return true
+	}
+
+	// Containers have been below thresholds long enough to scale down
+	if shouldScaleDownCounter >= *scaleDownOkPeriods {
+		logScaleEvent("Reached scale down threshold. Attempting to remove a replica, resetting scale down counter, and entering cooldown")
+		if err := scaleDownDeployment(*namespace, *deploymentName); err != nil {
+			return true
+		}
+		shouldScaleDownCounter = 0
+		time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
+		return true
+	}
+
+	// No container are breaching
+	if thresholdBreachesCounter == 0 {
+		shouldScaleDownCounter++
+		logInfo(fmt.Sprintf("No containers are breaching. Incrementing scale down counter. Counter is now at: %d", shouldScaleDownCounter))
+		return false
+	}
+
+	breachPercent := (float64(thresholdBreachesCounter) / float64(len(metricState))) * 100
+
+	// Every container is breaching
+	if breachPercent == 100 {
+		shouldScaleUpCounter++
+		logInfo(fmt.Sprintf("All containers are breaching thresholds. Incrementing scale up counter. Counter is now at: %d", shouldScaleUpCounter))
+		thresholdBreachesCounter = 0
+		return true
+	} else if breachPercent >= float64(*breachpercentthreshold) {
+		shouldScaleUpCounter++
+		logInfo(fmt.Sprintf("Percent of breaching containers passed threshold. Incrementing scale up counter. Breach percent: %g", breachPercent))
+		thresholdBreachesCounter = 0
+		return true
+	} else {
+		logInfo(fmt.Sprintf("Breaching container percent is below %g percent threshold", breachPercent))
+		return false
+	}
+
 }

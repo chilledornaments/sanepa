@@ -16,7 +16,7 @@ One SanePA container should watch one deployment. SanePA has a very small footpr
 
 ### Notes
 
-`sanepa` runs its checks every 20 seconds. You should take that into consideration when setting `-cooldown` and `-scaledownok` arg values.
+`sanepa` runs its checks every 40 seconds. You should take that into consideration when setting `-cooldown` and `-scaledownok` arg values.
 
 If you manually scale a deployment, `sanepa` will not try to scale it back down until it reaches another scaling event.
 
@@ -46,11 +46,10 @@ If you manually scale a deployment, `sanepa` will not try to scale it back down 
 
 `-gl-server`: `IP:PORT` of Graylog server. Defaults to `""`. Required if `-gl-enabled` is `true`.
 
+`-breachpercentthreshold`: Percent of pods that must be breaching a threshold in order to scale. Example: If `-breachpercentthreshold=25`, 25% of pods must be breaching for `scaledownok` periods.
+
 ## TODO
 
-- Cleanup codebase
-- Use a real logger
-  - Add Graylog
 - Handle all memory and CPU suffixes
   - Memory details in `kubectl explain PodMetrics.containers.usage`
   

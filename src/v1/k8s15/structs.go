@@ -56,3 +56,8 @@ type deploymentStruct struct {
 		} `json:"template"`
 	} `json:"spec"`
 }
+
+type metricReadings struct {
+	Memory int
+	CPU    int
+}
