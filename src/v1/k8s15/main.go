@@ -230,7 +230,7 @@ func checkIfShouldScale() bool {
 		if err := scaleUpDeployment(*namespace, *deploymentName); err != nil {
 			return true
 		}
-		shouldScaleUpCounter = 0
+		resetScalingCounters()
 		time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
 		return true
 	}
@@ -241,7 +241,7 @@ func checkIfShouldScale() bool {
 		if err := scaleDownDeployment(*namespace, *deploymentName); err != nil {
 			return true
 		}
-		shouldScaleDownCounter = 0
+		resetScalingCounters()
 		time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
 		return true
 	}
@@ -270,5 +270,4 @@ func checkIfShouldScale() bool {
 		logInfo(fmt.Sprintf("Breaching container percent is below %g percent threshold", breachPercent))
 		return false
 	}
-
 }

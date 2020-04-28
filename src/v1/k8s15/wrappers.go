@@ -103,3 +103,8 @@ func convertMemoryToMibiWrapper(memoryUsage int, memoryType string) int {
 func generateThreshold(limit int, threshold int) int {
 	return limit * threshold / 100
 }
+
+func resetScalingCounters() {
+	shouldScaleDownCounter = 0
+	shouldScaleUpCounter = 0
+}
