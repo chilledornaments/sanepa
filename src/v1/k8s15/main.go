@@ -254,6 +254,7 @@ func checkIfShouldScale() bool {
 	// No container are breaching
 	if thresholdBreachesCounter == 0 {
 		shouldScaleDownCounter++
+		shouldScaleUpCounter = 0
 		logInfo(fmt.Sprintf("No containers are breaching. Incrementing scale down counter. Counter is now at: %d", shouldScaleDownCounter))
 		return false
 	}
@@ -263,11 +264,13 @@ func checkIfShouldScale() bool {
 	// Every container is breaching
 	if breachPercent == 100 {
 		shouldScaleUpCounter++
+		shouldScaleDownCounter = 0
 		logInfo(fmt.Sprintf("All containers are breaching thresholds. Incrementing scale up counter. Counter is now at: %d", shouldScaleUpCounter))
 		thresholdBreachesCounter = 0
 		return true
 	} else if breachPercent >= float64(*breachpercentthreshold) {
 		shouldScaleUpCounter++
+		shouldScaleDownCounter = 0
 		logInfo(fmt.Sprintf("Percent of breaching containers passed threshold. Incrementing scale up counter. Breach percent: %g", breachPercent))
 		thresholdBreachesCounter = 0
 		return true
