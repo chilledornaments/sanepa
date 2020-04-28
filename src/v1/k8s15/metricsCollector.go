@@ -44,7 +44,6 @@ func getDeploymentInfo(namespace string, deploymentName string) (*deploymentStru
 	deploymentMetrics := &deploymentStruct{}
 
 	data, err := clientset.RESTClient().Get().AbsPath(url).DoRaw()
-	fmt.Println(string(data))
 	if err != nil {
 		return nil, err
 	}

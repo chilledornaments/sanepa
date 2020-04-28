@@ -35,28 +35,26 @@ type deploymentStruct struct {
 			} `json:"annotations"`
 		*/
 	} `json:"metadata"`
-	Items []struct {
-		Spec struct {
-			Replicas int `json:"replicas"`
-			Template struct {
-				Spec struct {
-					Containers []struct {
-						Name      string `json:"name"`
-						Resources struct {
-							Limits struct {
-								CPU    string `json:"cpu"`
-								Memory string `json:"memory"`
-							} `json:"limits"`
-							Requests struct {
-								CPU    string `json:"cpu"`
-								Memory string `json:"memory"`
-							} `json:"requests"`
-						} `json:"resources"`
-					} `json:"containers"`
-				} `json:"spec"`
-			} `json:"template"`
-		} `json:"spec"`
-	} `json:"items"`
+	Spec struct {
+		Replicas int `json:"replicas"`
+		Template struct {
+			Spec struct {
+				Containers []struct {
+					Name      string `json:"name"`
+					Resources struct {
+						Limits struct {
+							CPU    string `json:"cpu"`
+							Memory string `json:"memory"`
+						} `json:"limits"`
+						Requests struct {
+							CPU    string `json:"cpu"`
+							Memory string `json:"memory"`
+						} `json:"requests"`
+					} `json:"resources"`
+				} `json:"containers"`
+			} `json:"spec"`
+		} `json:"template"`
+	} `json:"spec"`
 }
 
 type metricReadings struct {

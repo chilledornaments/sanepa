@@ -123,9 +123,8 @@ func monitorAndScale() {
 	} else {
 
 		deploymentInfo, err := getDeploymentInfo(*namespace, *deploymentName)
-		fmt.Println(deploymentInfo)
 
-		if len(deploymentInfo.Items[0].Spec.Template.Spec.Containers) < 1 {
+		if len(deploymentInfo.Spec.Template.Spec.Containers) < 1 {
 			logError("Deployment.Spec.Template.Spec.Containers is empty", nil)
 			metricParseError = true
 		}
@@ -142,15 +141,15 @@ func monitorAndScale() {
 			logInfo(fmt.Sprintf("Scale down ok periods is %d", *scaleDownOkPeriods))
 			logInfo(fmt.Sprintf("Scale up ok periods is %d", *scaleUpOkPeriods))
 
-			for k := range deploymentInfo.Items[0].Spec.Template.Spec.Containers {
-				deploymentCPULimit = parseCPULimit(deploymentInfo.Items[0].Spec.Template.Spec.Containers[k].Resources.Limits.CPU)
+			for k := range deploymentInfo.Spec.Template.Spec.Containers {
+				deploymentCPULimit = parseCPULimit(deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.CPU)
 				deploymentCPUThreshold = generateThreshold(deploymentCPULimit, *cpuThreshold)
-				deploymentMemoryLimit = parseMemoryLimit(deploymentInfo.Items[0].Spec.Template.Spec.Containers[k].Resources.Limits.Memory)
+				deploymentMemoryLimit = parseMemoryLimit(deploymentInfo.Spec.Template.Spec.Containers[k].Resources.Limits.Memory)
 				deploymentMemoryThreshold = generateThreshold(deploymentMemoryLimit, *memThreshold)
-				containerNameToMatch = deploymentInfo.Items[0].Spec.Template.Spec.Containers[k].Name
-				logInfo(fmt.Sprintf("CPU limit is %d milliCPU for deployment: %s", deploymentCPULimit, deploymentInfo.Items[0].Spec.Template.Spec.Containers[k].Name))
+				containerNameToMatch = deploymentInfo.Spec.Template.Spec.Containers[k].Name
+				logInfo(fmt.Sprintf("CPU limit is %d milliCPU for deployment: %s", deploymentCPULimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
 				logInfo(fmt.Sprintf("Scaling CPU threshold is %d milliCPU", deploymentCPUThreshold))
-				logInfo(fmt.Sprintf("Memory limit is %d Mibibytes for deployment: %s percent", deploymentMemoryLimit, deploymentInfo.Items[0].Spec.Template.Spec.Containers[k].Name))
+				logInfo(fmt.Sprintf("Memory limit is %d Mibibytes for deployment: %s percent", deploymentMemoryLimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
 				logInfo(fmt.Sprintf("Scaling memory threshold is %d mibibytes", deploymentMemoryThreshold))
 
 				for k := range podMetrics.Items {
