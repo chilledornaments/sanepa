@@ -121,7 +121,6 @@ func monitorAndScale() {
 		metricParseError = true
 		time.Sleep(10)
 	} else {
-
 		deploymentInfo, err := getDeploymentInfo(*namespace, *deploymentName)
 
 		if len(deploymentInfo.Spec.Template.Spec.Containers) < 1 {
