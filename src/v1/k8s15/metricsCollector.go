@@ -47,6 +47,7 @@ func getDeploymentInfo(namespace string, deploymentName string) (*deploymentStru
 	if err != nil {
 		return nil, err
 	}
+
 	err = json.Unmarshal(data, &deploymentMetrics)
 
 	if err != nil {
