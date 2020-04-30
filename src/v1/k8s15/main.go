@@ -57,7 +57,7 @@ func main() {
 	shouldScaleUpCounter = 0
 	shouldScaleDownCounter = 0
 	thresholdBreachesCounter = 0
-	metricState = make(map[string]metricReadings)
+	//metricState = make(map[string]metricReadings)
 
 	inCluster = flag.Bool("incluster", true, "-incluster=false to run outside of a k8s cluster")
 	namespace = flag.String("ns", "", "Namespace to search in. Example: -ns=default")
@@ -172,6 +172,7 @@ func monitorAndScale() {
 					}
 				}
 			}
+			metricState = make(map[string]metricReadings)
 			if !metricParseError {
 				checkMetricThresholds()
 				checkIfShouldScale()

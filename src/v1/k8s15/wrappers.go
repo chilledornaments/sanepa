@@ -107,5 +107,4 @@ func generateThreshold(limit int, threshold int) int {
 func resetScalingCounters() {
 	shouldScaleDownCounter = 0
 	shouldScaleUpCounter = 0
-	metricState = make(map[string]metricReadings)
 }
