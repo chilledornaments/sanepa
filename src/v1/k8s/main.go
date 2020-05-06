@@ -111,6 +111,8 @@ func monitorAndScale() {
 
 	fmt.Println("********************************************************")
 
+	metricState = make(map[string]metricReadings)
+
 	currentContainerCount := 0
 	metricParseError = false
 
@@ -165,6 +167,7 @@ func monitorAndScale() {
 							err := storeMetricData(containerName, podMetrics.Items[k].Containers[key].Usage.CPU, podMetrics.Items[k].Containers[key].Usage.Memory)
 							if err != nil {
 								metricParseError = true
+								logError("Received error storing metric data", err)
 							} else {
 								metricParseError = false
 							}
@@ -172,7 +175,6 @@ func monitorAndScale() {
 					}
 				}
 			}
-			metricState = make(map[string]metricReadings)
 			if !metricParseError {
 				checkMetricThresholds()
 				checkIfShouldScale()
@@ -183,6 +185,7 @@ func monitorAndScale() {
 }
 
 func storeMetricData(containerName string, cpu string, memory string) error {
+
 	cpuInt, s, err := parseCPUReading(cpu)
 	if err != nil {
 		logError("Error parsing CPU reading", err)
