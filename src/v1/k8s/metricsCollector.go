@@ -36,9 +36,9 @@ func getDeploymentInfo(namespace string, deploymentName string) (*deploymentStru
 	var url string
 
 	if namespace == "" {
-		url = "apis/extensions/v1beta1/deployments"
+		url = "apis/apps/v1/deployments"
 	} else {
-		url = fmt.Sprintf("apis/extensions/v1beta1/namespaces/%s/deployments/%s", namespace, deploymentName)
+		url = fmt.Sprintf("apis/apps/v1/namespaces/%s/deployments/%s", namespace, deploymentName)
 	}
 
 	deploymentMetrics := &deploymentStruct{}
