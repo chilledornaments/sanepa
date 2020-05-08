@@ -15,5 +15,5 @@ jobs:
     - name: 'Build and push SanePA Docker container'
       env:
         DOCKER_USERNAME: mitchya1
-        DOCKER_PASSWORD: '${{ secrets.DOCKERHUB_PASSWORD }}'
+        DOCKER_PASSWORD: '${{ secrets.DOCKER_PASSWORD }}'
       run: bash ./helpers/dockerpush.sh
