@@ -6,13 +6,25 @@ The sane Kubernetes HPA
 
 This project follows AWS EKS releases, which are well behind Kubernetes releases.
 
+## Versions
+
+I try my best to keep up with AWS EKS, **not** the upstream Kubernetes project.
+
+The `master` branch has tested compatability with Kubernets 1.15.7.
+
+Branches are semver'd to match EKS releases (aside from master, of course).
+
+Because the Kubernetes project moves so quickly, I don't intend on making updates to older SanePA versions once I've released updates for a newer Kubernetes version.
+
 ## Running
 
-You can find kubernetes examples in `examples/k8s/`.
+You can find Kubernetes examples in `examples/k8s/`.
 
 Do **not** run multiple SanePA deployments that watch the same deployment.
 
-One SanePA container should watch one deployment. SanePA has a very small footprint, so resource consumption shouldn't be a concern
+SanePA has a very small footprint, so resource consumption shouldn't be a concern.
+
+You can find Docker images [here](https://hub.docker.com/repository/docker/mitchya1/sanepa)
 
 ### Notes
 
