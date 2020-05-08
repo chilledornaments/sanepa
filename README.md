@@ -2,6 +2,8 @@
 
 ![Build 1.16.8](https://github.com/mitchya1/sanepa/workflows/Build%201.16.8/badge.svg?branch=1.16.8)
 
+![Logo](./img/gopher-logo.png)
+
 The sane Kubernetes HPA
 
 `sanepa` checks pod resource usage against `deployment.spec.template.spec.containers.resources.limits` values and will scale up and down when a pod is above a set threshold.
