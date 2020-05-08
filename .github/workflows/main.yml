@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
     - name: 'Build Go binary'
-      run: "echo $PWD"
+      run: "ls"
       #working-directory: 
   build_push_docker:
     name: 'Build and push SanePA Docker container'
