@@ -6,9 +6,9 @@
 
 The sane Kubernetes HPA
 
-`sanepa` checks pod resource usage against `deployment.spec.template.spec.containers.resources.limits` values and will scale up and down when a pod is above a set threshold.
+`sanepa` checks pod resource usage against `deployment.spec.template.spec.containers.resources.limits` values and will scale up and down when a given percentage of pods are above or below a set threshold.
 
-This project follows AWS EKS releases, which are well behind Kubernetes releases.
+This project follows AWS EKS releases.
 
 ## Versions
 
@@ -62,7 +62,7 @@ If you manually scale a deployment, `sanepa` will not try to scale it back down 
 
 `-gl-server`: `IP:PORT` of Graylog server. Defaults to `""`. Required if `-gl-enabled` is `true`.
 
-`-breachpercentthreshold`: Percent of pods that must be breaching a threshold in order to scale. Example: If `-breachpercentthreshold=25`, 25% of pods must be breaching for `scaledownok` periods.
+`-breachpercentthreshold`: Percent of pods that must be breaching a threshold in order to scale. Example: If `-breachpercentthreshold=25`, 25% of pods must be breaching for `scaleupok` periods. Likewise, less than 25% of pods must be below memory and CPU thresholds for `scaledownok` periods.
 
 ## TODO
 
