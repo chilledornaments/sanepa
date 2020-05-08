@@ -12,7 +12,9 @@ I try my best to keep up with AWS EKS, **not** the upstream Kubernetes project.
 
 The `master` branch has tested compatability with Kubernets 1.15.7.
 
-Branches are semver'd to match EKS releases (aside from master, of course)
+Branches are semver'd to match EKS releases (aside from master, of course).
+
+Because the Kubernetes project moves so quickly, I don't intend on making updates to older SanePA versions once I've released updates for a newer Kubernetes version.
 
 ## Running
 
