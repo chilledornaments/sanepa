@@ -56,7 +56,6 @@ func main() {
 	hasScaled = false
 	shouldScaleUpCounter = 0
 	shouldScaleDownCounter = 0
-	thresholdBreachesCounter = 0
 	//metricState = make(map[string]metricReadings)
 
 	inCluster = flag.Bool("incluster", true, "-incluster=false to run outside of a k8s cluster")
@@ -150,7 +149,7 @@ func monitorAndScale() {
 				containerNameToMatch = deploymentInfo.Spec.Template.Spec.Containers[k].Name
 				logInfo(fmt.Sprintf("CPU limit is %d milliCPU for deployment: %s", deploymentCPULimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
 				logInfo(fmt.Sprintf("Scaling CPU threshold is %d milliCPU", deploymentCPUThreshold))
-				logInfo(fmt.Sprintf("Memory limit is %d Mibibytes for deployment: %s percent", deploymentMemoryLimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
+				logInfo(fmt.Sprintf("Memory limit is %d Mibibytes for deployment: %s", deploymentMemoryLimit, deploymentInfo.Spec.Template.Spec.Containers[k].Name))
 				logInfo(fmt.Sprintf("Scaling memory threshold is %d mibibytes", deploymentMemoryThreshold))
 
 				for k := range podMetrics.Items {
@@ -208,19 +207,17 @@ func storeMetricData(containerName string, cpu string, memory string) error {
 }
 
 func checkMetricThresholds() {
+	numberBreachingContainers = 0
 
 	for k, v := range metricState {
 		if v.CPU > deploymentCPUThreshold {
 			logInfo(fmt.Sprintf("%s is breaching CPU: %d mCPU used", k, v.CPU))
-			thresholdBreachesCounter++
+			numberBreachingContainers++
 		} else if v.Memory > deploymentMemoryThreshold {
 			logInfo(fmt.Sprintf("%s is breaching memory: %d MiB used", k, v.Memory))
-			thresholdBreachesCounter++
+			numberBreachingContainers++
 		} else {
 			logInfo(fmt.Sprintf("%s is not breaching", k))
-			if thresholdBreachesCounter > 0 {
-				thresholdBreachesCounter--
-			}
 		}
 	}
 }
@@ -231,7 +228,7 @@ func checkIfShouldScale() bool {
 		If this percent is greater than the breachpercentthreshold, we'll increment the shouldScaleUpCounter counter
 		If the shouldScaleUpCounter counter is greater than the scaleupok value, we'll scale up
 	*/
-	logInfo(fmt.Sprintf("ScaleDownCounter=%d ScaleUpCounter=%d NumberOfBreachingContainers=%d NumberOfPods=%d", shouldScaleDownCounter, shouldScaleUpCounter, thresholdBreachesCounter, len(metricState)))
+	logInfo(fmt.Sprintf("ScaleDownCounter=%d ScaleUpCounter=%d NumberOfBreachingContainers=%d NumberOfContainers=%d", shouldScaleDownCounter, shouldScaleUpCounter, numberBreachingContainers, len(metricState)))
 
 	// Enough containers have been breaching for long enough for us to scale up
 	if shouldScaleUpCounter >= *scaleUpOkPeriods {
@@ -256,30 +253,30 @@ func checkIfShouldScale() bool {
 	}
 
 	// No container are breaching
-	if thresholdBreachesCounter == 0 {
+	if numberBreachingContainers == 0 {
 		shouldScaleDownCounter++
 		shouldScaleUpCounter = 0
 		logInfo(fmt.Sprintf("No containers are breaching. Incrementing scale down counter. Counter is now at: %d", shouldScaleDownCounter))
 		return false
 	}
 
-	breachPercent := (float64(thresholdBreachesCounter) / float64(len(metricState))) * 100
+	breachPercent := (float64(numberBreachingContainers) / float64(len(metricState))) * 100
 
 	// Every container is breaching
 	if breachPercent == 100 {
 		shouldScaleUpCounter++
 		shouldScaleDownCounter = 0
 		logInfo(fmt.Sprintf("All containers are breaching thresholds. Incrementing scale up counter. Counter is now at: %d", shouldScaleUpCounter))
-		thresholdBreachesCounter = 0
 		return true
 	} else if breachPercent >= float64(*breachpercentthreshold) {
 		shouldScaleUpCounter++
 		shouldScaleDownCounter = 0
 		logInfo(fmt.Sprintf("Percent of breaching containers passed threshold. Incrementing scale up counter. Breach percent: %g", breachPercent))
-		thresholdBreachesCounter = 0
 		return true
 	} else {
-		logInfo(fmt.Sprintf("Breaching container percent is below %g percent threshold", breachPercent))
+		logInfo(fmt.Sprintf("Breaching container percent %g is below %d breach percent threshold. Incrementing shouldScaleDownCounter", breachPercent, *breachpercentthreshold))
+		shouldScaleDownCounter++
+		shouldScaleUpCounter = 0
 		return false
 	}
 }
