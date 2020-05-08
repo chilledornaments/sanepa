@@ -4,13 +4,16 @@ on:
     branches:
       - 1.16.8
 jobs:
+  checkout:
+    name: 'Checkout'
+    steps:
+    - uses: actions/checkout@v2
   build_go:
     name: 'Build Go binary'
     runs-on: ubuntu-18.04
     steps:
     - name: 'Build Go binary'
-      run: "ls"
-      #working-directory: 
+      run: bash ./helpers/build.sh
   build_push_docker:
     name: 'Build and push SanePA Docker container'
     needs: build_go
