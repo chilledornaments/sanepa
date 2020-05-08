@@ -1,6 +1,6 @@
 # sanepa
 
-![Build 1.16.8](https://github.com/mitchya1/sanepa/workflows/Build%20and%20Push/badge.svg?branch=1.16.8)
+![Build 1.16.8](https://github.com/mitchya1/sanepa/workflows/Build%201.16.8/badge.svg?branch=1.16.8)
 
 The sane Kubernetes HPA
 
