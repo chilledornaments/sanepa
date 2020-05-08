@@ -7,16 +7,16 @@ jobs:
   build_go:
     name: 'Build Go binary'
     runs-on: ubuntu-18.04
-    defaults:
-      run:
-        shell: bash ./helpers/build.sh
+    steps:
+    - name: 'Build Go binary'
+      run: bash ./helpers/build.sh
   build_push_docker:
     name: 'Build and push SanePA Docker container'
     needs: build_go
     runs-on: 'ubuntu-18.04'
-    env:
-      DOCKER_USERNAME: mitchya1
-      DOCKER_PASSWORD: '${{ secrets.DOCKERHUB_PASSWORD }}'
-    defaults:
-      run:
-        shell: bash ./helpers/dockerpush.sh
+    steps:
+    - name: 'Build and push SanePA Docker container'
+      env:
+        DOCKER_USERNAME: mitchya1
+        DOCKER_PASSWORD: '${{ secrets.DOCKERHUB_PASSWORD }}'
+      run: bash ./helpers/dockerpush.sh
