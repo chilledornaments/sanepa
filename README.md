@@ -1,6 +1,6 @@
 # sanepa
 
-![Build 1.16.8](https://github.com/mitchya1/sanepa/workflows/Build%201.16.8/badge.svg?branch=1.16.8)
+![Build 1.16.8](https://github.com/mitchya1/sanepa/workflows/Build%201.16.8/badge.svg?branch=1.16.8) [![Go Report Card](https://goreportcard.com/badge/github.com/mitchya1/sanepa)](https://goreportcard.com/report/github.com/mitchya1/sanepa)
 
 ![Logo](./img/gopher-logo.png)
 
