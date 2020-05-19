@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -71,7 +73,7 @@ func main() {
 	breachpercentthreshold = flag.Int("breachpercentthreshold", 50, "What percentage of pods must be in breaching state before scaling up?")
 	graylogEnabled = flag.Bool("gl-enabled", false, "Enable logging to Graylog. Example: -gl-enabled=true")
 	graylogUDPWriter = flag.String("gl-server", "", "IP:PORT of Graylog server. UDP only. Required if -gl-enabled=true. Example: -gl-server=10.10.5.44:11411")
-
+	listenPort = flag.Int("listen", 5151, "Port for web server to listen on")
 	flag.Parse()
 
 	if *graylogEnabled {
@@ -98,6 +100,14 @@ func main() {
 		}
 	}
 
+	http.HandleFunc("/health", healthCheck)
+	http.Handle("/metrics", promhttp.Handler())
+
+	// Go func to make web server non-blocking
+	go func() {
+		log.Fatal(http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", *listenPort), nil))
+	}()
+
 	watcher := time.Tick(40 * time.Second)
 
 	for range watcher {
@@ -119,6 +129,7 @@ func monitorAndScale() {
 
 	if err != nil {
 		logError("Error gathering pod metrics. Backing off for 10 seconds. Error:", err)
+		incCollectionErrCounter()
 		metricParseError = true
 		time.Sleep(10)
 	} else {
@@ -131,6 +142,7 @@ func monitorAndScale() {
 
 		if err != nil {
 			logError("Error gathering deployment metrics. Backing off for 10 seconds. Error:", err)
+			incCollectionErrCounter()
 			metricParseError = true
 			time.Sleep(10)
 		} else {
@@ -174,12 +186,12 @@ func monitorAndScale() {
 					}
 				}
 			}
-			if !metricParseError {
-				checkMetricThresholds()
-				checkIfShouldScale()
-			}
-
 		}
+	}
+
+	if !metricParseError {
+		checkMetricThresholds()
+		checkIfShouldScale()
 	}
 }
 

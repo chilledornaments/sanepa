@@ -64,6 +64,8 @@ If you manually scale a deployment, `sanepa` will not try to scale it back down 
 
 `-breachpercentthreshold`: Percent of pods that must be breaching a threshold in order to scale. Example: If `-breachpercentthreshold=25`, 25% of pods must be breaching for `scaleupok` periods. Likewise, less than 25% of pods must be below memory and CPU thresholds for `scaledownok` periods.
 
+`-listen`: Port for web server to listen on. Currently the web server only has a healtcheck endpoint and a metrics endpoint for Prometheus
+
 ## TODO
 
 - Handle all memory and CPU suffixes
