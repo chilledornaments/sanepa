@@ -15,7 +15,9 @@ func scaleUpDeployment(namespace string, deploymentName string) error {
 	d, err := deploymentsClient.GetScale(deploymentName, o)
 
 	if err != nil {
-		panic(err)
+		logError("Error attempting to get deployment scale", err)
+		incCollectionErrCounter()
+		return err
 	}
 
 	if int(d.Spec.Replicas) >= *deploymentMaxReplicas {
@@ -31,10 +33,12 @@ func scaleUpDeployment(namespace string, deploymentName string) error {
 
 	if err != nil {
 		logError(fmt.Sprintf("Received error when attempting to scale up to %d replicas", newReplicas), err)
+		incScaleUpErrCounter()
 		return err
 	}
 
 	logScaleEvent(fmt.Sprintf("Successfully scaled %s up to %d replicas", deploymentName, newReplicas))
+	incScaleUpCounter()
 	return nil
 
 }
@@ -48,6 +52,7 @@ func scaleDownDeployment(namespace string, deploymentName string) error {
 
 	if err != nil {
 		logError("Error attempting to get deployment scale", err)
+		incCollectionErrCounter()
 		return err
 	}
 
@@ -64,10 +69,12 @@ func scaleDownDeployment(namespace string, deploymentName string) error {
 
 	if err != nil {
 		logError(fmt.Sprintf("Received error when attempting to scale down to %d replicas", newReplicas), err)
+		incScaleDownErrCounter()
 		return err
 	}
 
 	logScaleEvent(fmt.Sprintf("Successfully scaled %s down to %d replicas", deploymentName, newReplicas))
+	incScaleDownCounter()
 	return nil
 
 }

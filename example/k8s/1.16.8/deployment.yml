@@ -3,6 +3,10 @@ kind: Deployment
 metadata:
   name: sanepa-example-deployment
   namespace: default
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path:   '/metrics'
+    prometheus.io/port: '3113'
 spec:
   replicas: 1
   selectors:
@@ -33,6 +37,16 @@ spec:
             - "-gl-enabled=true"
             - "-gl-server=10.10.5.44:15151"
             - "-breachpercentthreshold=25"
+            - "-listen=3113"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3113
+            timeoutSeconds: 5
+            initialDelaySeconds: 3
+          ports:
+            - containerPort: 3113
+              protocol: "TCP"
           resources:
               limits:
                 memory: "50Mi"
