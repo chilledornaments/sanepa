@@ -75,7 +75,7 @@ func logError(message string, e error) {
 	if *graylogEnabled {
 		_, file, line, _ := runtime.Caller(1)
 		extra := map[string]interface{}{"file": file, "line": line, "deployment": *deploymentName}
-		m := wrapBuildGraylogMessage("error", fmt.Sprintf("%s err=%s", message, err.Error()), 3, extra)
+		m := wrapBuildGraylogMessage("error", fmt.Sprintf("%s err=%s", message, e.Error()), 3, extra)
 		sendGraylogMessage(m)
 	}
 }
