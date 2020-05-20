@@ -61,3 +61,10 @@ type metricReadings struct {
 	Memory int
 	CPU    int
 }
+
+type externalScaleUpRequest struct {
+	Namespace      string `json:"namespace"`
+	DeploymentName string `json:"deploymentName"`
+	DesiredCount   int    `json:"count"`
+	Token          string `json:"token"`
+}

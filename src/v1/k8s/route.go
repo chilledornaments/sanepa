@@ -7,3 +7,7 @@ func healthCheck(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("Alive"))
 	return
 }
+
+func scaleEndpoint(w http.ResponseWriter, r *http.Request) {
+
+}
