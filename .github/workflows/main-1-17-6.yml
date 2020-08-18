@@ -1,0 +1,19 @@
+name: 'Build 1.17.6'
+on:
+  push:
+    branches:
+      - 1.17.6
+jobs:
+  flow:
+    name: 'Deploy flow'
+    runs-on: ubuntu-18.04
+    steps:
+    - name: 'Checkout'
+      uses: actions/checkout@v2
+    - name: 'Build Go binary'
+      run: bash ./helpers/build.sh
+    - name: 'Build and push SanePA Docker container'
+      env:
+        DOCKER_USERNAME: mitchya1
+        DOCKER_PASSWORD: '${{ secrets.DOCKER_PASSWORD }}'
+      run: bash ./helpers/dockerpush.sh
