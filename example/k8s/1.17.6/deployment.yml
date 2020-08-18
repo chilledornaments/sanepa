@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sanepa-example-deployment
+  namespace: default
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path:   '/metrics'
+    prometheus.io/port: '3113'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sanepa
+  template:
+    metadata:
+      labels:
+        app: sanepa
+        monitoring: example-deployment
+    spec:
+      serviceAccountName: sanepa-service-account
+      containers:
+        - name: sanepa
+          image: mitchya1/sanepa:v1-k8s1.17.6-latest
+          command: ["/sanepa"]
+          args:
+            - "-incluster=true"
+            - "-ns=test"
+            - "-dep=example-deployment"
+            - "-cpu=50"
+            - "-mem=60"
+            - "-min=2"
+            - "-max=4"
+            - "-cooldown=100"
+            - "-scaledownok=5"
+            - "-scaleupok=2"
+            - "-gl-enabled=true"
+            - "-gl-server=10.10.5.44:15151"
+            - "-breachpercentthreshold=25"
+            - "-listen=3113"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3113
+            timeoutSeconds: 5
+            initialDelaySeconds: 3
+          ports:
+            - containerPort: 3113
+              protocol: "TCP"
+          resources:
+              limits:
+                memory: "50Mi"
+                cpu: "20m"
+              requests:
+                memory: "10Mi"
+                cpu: "10m"
+          terminationMessagePath: "/tmp/term.log"
