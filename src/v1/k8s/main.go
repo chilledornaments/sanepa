@@ -246,7 +246,7 @@ func checkIfShouldScale() bool {
 	if shouldScaleUpCounter >= *scaleUpOkPeriods {
 		logScaleEvent("shouldScaleUpCounter has hit threshold. Attempting to add another replica, resetting scale up counter, and entering cooldown")
 		if err := scaleUpDeployment(*namespace, *deploymentName); err != nil {
-			if err != errScalingLimitReached {
+			if err == errScalingLimitReached {
 				resetScalingCounters()
 				time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
 				return true
@@ -262,7 +262,7 @@ func checkIfShouldScale() bool {
 	if shouldScaleDownCounter >= *scaleDownOkPeriods {
 		logScaleEvent("Reached scale down threshold. Attempting to remove a replica, resetting scale down counter, and entering cooldown")
 		if err := scaleDownDeployment(*namespace, *deploymentName); err != nil {
-			if err != errScalingLimitReached {
+			if err == errScalingLimitReached {
 				resetScalingCounters()
 				time.Sleep(time.Duration(*cooldownInSeconds) * time.Second)
 				return true
